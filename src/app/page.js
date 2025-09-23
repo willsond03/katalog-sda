@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 
 // Ganti dengan URL Google Apps Script Anda untuk fitur Market Sounding
-const APPS_SCRIPT_URL = "URL_APPS_SCRIPT_ANDA"; 
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGIlUNHm_9qm11g0sFnW8_N67mdLNsjRDWDn8uewmyJ6pX1HYWLVoiVR-ifkCxM4PL/exec"; 
 
 // --- Komponen-Komponen ---
 const Map = dynamic(
