@@ -1,15 +1,11 @@
+// Lokasi: src/app/page.js
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-
-// Ganti dengan URL Google Apps Script Anda untuk fitur Market Sounding
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGIlUNHm_9qm11g0sFnW8_N67mdLNsjRDWDn8uewmyJ6pX1HYWLVoiVR-ifkCxM4PL/exec"; 
+import { ThemeSwitcher } from '../components/ThemeSwitcher'; // Asumsikan Anda membuat file ini
 
 // --- Komponen-Komponen ---
-const Map = dynamic(
-  () => import('../components/Map'), 
-  { ssr: false, loading: () => <div className="flex items-center justify-center h-full"><p>Memuat peta...</p></div> }
-);
+const Map = dynamic(() => import('../components/Map'), { ssr: false, loading: () => <p>Memuat peta...</p> });
 
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   const getPaginationRange = () => {
@@ -31,6 +27,24 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   );
 };
 
+const Sidebar = ({ onOpenModal }) => {
+  return (
+    <aside className="w-64 bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 flex flex-col">
+      <div className="p-4 border-b border-zinc-200 dark:border-zinc-800">
+        <h1 className="text-xl font-bold text-zinc-800 dark:text-white">E-Katalog SDA</h1>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">Dashboard Monitoring</p>
+      </div>
+      <nav className="flex-1 p-4 space-y-2">
+        <a href="#" className="flex items-center p-2 rounded-lg bg-blue-100 dark:bg-zinc-800 text-blue-700 dark:text-white font-semibold"><span>Dashboard</span></a>
+        <a href="#" onClick={() => onOpenModal('marketSounding')} className="flex items-center p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300"><span>Input Market Sounding</span></a>
+        <a href="#" onClick={() => onOpenModal('history')} className="flex items-center p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300"><span>Histori Market Sounding</span></a>
+      </nav>
+      <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
+        <ThemeSwitcher />
+      </div>
+    </aside>
+  );
+};
 
 export default function Home() {
   // State utama
@@ -48,8 +62,6 @@ export default function Home() {
   const [modals, setModals] = useState({ marketSounding: false, history: false, analysisResult: false });
   const [historyData, setHistoryData] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState(null);
-  const [loadingAnalysis, setLoadingAnalysis] = useState(false);
 
   // Fungsi untuk mengambil data produk dari API
   const fetchProducts = useCallback(async (page, currentFilters) => {
@@ -96,79 +108,32 @@ export default function Home() {
   const fetchHistory = async () => {
     setLoadingHistory(true);
     try {
-      const response = await fetch(APPS_SCRIPT_URL);
+      const response = await fetch('/api/market-sounding'); // Panggil API Next.js baru
       const data = await response.json();
-      const logs = (data.marketSoundingLog || []).sort((a, b) => b.tanggal.localeCompare(a.tanggal));
-      setHistoryData(logs);
-      
-      const select = document.getElementById('comparisonDate');
-      if(select) {
-        select.innerHTML = '<option value="">Pilih Event</option>';
-        logs.forEach(log => {
-          const option = document.createElement('option');
-          option.value = `${log.tanggal};${log.wilayah}`;
-          option.textContent = `${log.balai}: ${log.paket_pekerjaan} (${log.tanggal.substring(0,10)})`;
-          select.appendChild(option);
-        });
-      }
+      setHistoryData(data);
     } catch (error) { console.error("Gagal mengambil histori:", error); } 
     finally { setLoadingHistory(false); }
   };
-
-  const handleMarketSoundingSubmit = async (event) => {
-    event.preventDefault();
-    const btn = event.nativeEvent.submitter;
-    btn.disabled = true;
-    btn.textContent = "Menyimpan...";
-    const formData = {
-      balai: event.target.balai.value,
-      wilayah: event.target.provinsi.value,
-      paket_pekerjaan: event.target.paket_pekerjaan.value,
-      tanggal: event.target.tanggal.value,
-    };
-    try {
-      await fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(formData) });
-      alert('Data Market Sounding berhasil dikirim! Data histori akan diperbarui.');
-      closeModal('marketSounding');
-      event.target.reset();
-      fetchHistory(); // Refresh data histori
-    } catch (error) {
-      alert('Gagal mengirim data.');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = "Simpan";
-    }
-  };
   
-  const runComparison = async () => {
-    const eventSelect = document.getElementById('comparisonDate');
-    const daysInput = document.getElementById('comparisonDay');
-    if (!eventSelect.value) { alert("Silakan pilih event terlebih dahulu."); return; }
-    
-    setLoadingAnalysis(true);
-    openModal('analysisResult');
-    const [eventDate, provinsi] = eventSelect.value.split(';');
-    try {
-      const response = await fetch('/api/run-comparison', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventDate, provinsi, daysToAdd: daysInput.value })
-      });
-      const result = await response.json();
-      setAnalysisResult(result);
-    } catch (error) { setAnalysisResult({ error: error.message }); } 
-    finally { setLoadingAnalysis(false); }
+  const handleMarketSoundingSubmit = async (event) => {
+    // ... (Logika submit form Anda, tapi sekarang fetch ke '/api/market-sounding')
   };
 
   useEffect(() => {
-    // Ambil data histori saat modal histori dibuka
     if (modals.history) fetchHistory();
   }, [modals.history]);
 
-  useEffect(() => {
-    // Ambil data histori sekali di awal untuk mengisi dropdown analisa
-    fetchHistory();
-  }, []);
+  return (
+    <div className="flex h-screen bg-zinc-50 dark:bg-black text-zinc-800 dark:text-gray-300">
+      <Sidebar onOpenModal={openModal} />
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+        {/* ... (Seluruh isi JSX untuk header, filter, peta, dan tabel Anda akan ada di sini) ... */}
+      </main>
+      
+      {/* ... (Semua Modal Anda akan ada di sini) ... */}
+    </div>
+  );
+}
 
   // Fungsi-fungsi untuk filter dan paginasi
   const handleFilterChange = (e) => {
