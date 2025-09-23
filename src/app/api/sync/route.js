@@ -1,4 +1,3 @@
-// Di dalam file src/app/api/sync/route.js
 export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 
@@ -18,13 +17,13 @@ export async function POST(request) {
       throw new Error("Database binding (DB) tidak ditemukan.");
     }
 
+    // ---> BARIS INI YANG PALING PENTING <---
+    // Perintah ini akan mengosongkan tabel 'produk' sebelum data baru dimasukkan.
     await db.prepare("DELETE FROM produk").run();
 
     const stmt = db.prepare("INSERT INTO produk (nama_produk, perusahaan, provinsi, kategori_1, kategori_2, last_update) VALUES (?, ?, ?, ?, ?, ?)");
     
-    // --- PERUBAHAN UTAMA DI SINI ---
     const batch = dataToSync.map(row => {
-      // Sekarang kita gunakan nama kolom yang sudah bersih dan seragam
       return stmt.bind(
         row['nama_produk'] || null,
         row['perusahaan'] || null,
@@ -34,7 +33,6 @@ export async function POST(request) {
         row['last_update'] || null
       );
     });
-    // --- --------------------------- ---
 
     await db.batch(batch);
     return NextResponse.json({ message: `Sync successful, ${dataToSync.length} rows inserted.` });
