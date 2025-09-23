@@ -1,5 +1,4 @@
 // Di dalam file src/app/api/sync/route.js
-
 export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 
