@@ -1,103 +1,119 @@
-import Image from "next/image";
+'use client';
+import { useState, useEffect, useCallback } from 'react';
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [filterOptions, setFilterOptions] = useState({ provinsi: [], kategori_1: [] });
+  const [filters, setFilters] = useState({ provinsi: 'all', kategori_1: 'all' });
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, totalItems: 0 });
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const fetchProducts = useCallback(async (page, currentFilters) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams({ page: page, ...currentFilters });
+      const response = await fetch(`/api/products?${params}`);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      setProducts(data.items);
+      setPagination({ page: data.page, totalPages: data.totalPages, totalItems: data.totalItems });
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        const optionsRes = await fetch('/api/filter-options');
+        const optionsData = await optionsRes.json();
+        setFilterOptions(optionsData);
+        await fetchProducts(1, filters);
+      } catch (error) {
+        console.error("Gagal memuat data awal:", error);
+        setError(error.message);
+        setLoading(false);
+      }
+    };
+    fetchInitialData();
+  }, [fetchProducts, filters]);
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prevFilters => {
+      const newFilters = { ...prevFilters, [name]: value };
+      fetchProducts(1, newFilters); // Kembali ke halaman 1 saat filter diubah
+      return newFilters;
+    });
+  };
+  
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      fetchProducts(newPage, filters);
+    }
+  };
+
+  return (
+    <main className="p-8 bg-gray-100 min-h-screen">
+      <h1 className="text-2xl font-semibold text-gray-800">Dashboard Katalog SDA</h1>
+      
+      <div className="mt-4 p-4 bg-white rounded-lg shadow grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="provinsi" className="block text-sm font-medium">Provinsi</label>
+          <select name="provinsi" value={filters.provinsi} onChange={handleFilterChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            <option value="all">Semua Provinsi</option>
+            {filterOptions.provinsi.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+          </select>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+        <div>
+          <label htmlFor="kategori_1" className="block text-sm font-medium">Kategori 1</label>
+          <select name="kategori_1" value={filters.kategori_1} onChange={handleFilterChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            <option value="all">Semua Kategori 1</option>
+            {filterOptions.kategori_1.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div className="mt-6 bg-white p-4 rounded-lg shadow">
+        {loading ? <div className="text-center py-10">Memuat data...</div> : 
+         error ? <div className="text-center py-10 text-red-500">Error: {error}</div> : (
+          <>
+            <div className="text-sm text-gray-700 mb-2">
+              Menampilkan {products.length} dari {pagination.totalItems.toLocaleString('id-ID')} produk (Halaman {pagination.page} dari {pagination.totalPages})
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase">Nama Produk</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase">Perusahaan</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase">Provinsi</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y">
+                  {products.length > 0 ? products.map(p => (
+                    <tr key={p.id}>
+                      <td className="px-6 py-4 text-sm">{p.nama_produk}</td>
+                      <td className="px-6 py-4 text-sm text-gray-500">{p.perusahaan}</td>
+                      <td className="px-6 py-4 text-sm text-gray-500">{p.provinsi}</td>
+                    </tr>
+                  )) : (
+                    <tr><td colSpan="3" className="text-center py-4 text-gray-500">Tidak ada data.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex justify-end items-center mt-4">
+              <button onClick={() => handlePageChange(pagination.page - 1)} disabled={pagination.page <= 1} className="pagination-btn px-4 py-2 text-sm font-medium text-white bg-gray-800 rounded-l hover:bg-gray-900">Sebelumnya</button>
+              <button onClick={() => handlePageChange(pagination.page + 1)} disabled={pagination.page >= pagination.totalPages} className="pagination-btn px-4 py-2 text-sm font-medium text-white bg-gray-800 border-0 border-l border-gray-700 rounded-r hover:bg-gray-900">Berikutnya</button>
+            </div>
+          </>
+        )}
+      </div>
+    </main>
   );
 }
