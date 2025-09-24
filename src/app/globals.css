@@ -25,13 +25,27 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Perbaikan untuk z-index Peta Leaflet agar tidak menutupi modal */
-.leaflet-pane, .leaflet-tile, .leaflet-shadow-pane, .leaflet-overlay-pane, .leaflet-marker-pane, .leaflet-tooltip-pane, .leaflet-popup-pane {
+/* === PERBAIKAN Z-INDEX PETA LEAFLET (VERSI FINAL) === */
+
+/* Memastikan container utama peta berada di lapisan bawah */
+.leaflet-container {
     z-index: 10 !important;
 }
 
+/* Memastikan semua lapisan internal peta (tile, marker) juga di bawah */
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-shadow-pane,
+.leaflet-overlay-pane,
+.leaflet-marker-pane,
+.leaflet-tooltip-pane,
+.leaflet-popup-pane {
+    z-index: 10 !important;
+}
+
+/* Memastikan tombol kontrol (zoom, dll) juga di bawah modal */
 .leaflet-control-container {
     z-index: 20 !important;
 }
 
-/* Modal kita memiliki z-index 50, jadi akan selalu di atas */
+/* Modal kita di HTML/React menggunakan Tailwind class 'z-50', jadi akan selalu di atas. */

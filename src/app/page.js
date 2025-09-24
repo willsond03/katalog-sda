@@ -53,6 +53,7 @@ export default function Home() {
   const [filterOptions, setFilterOptions] = useState({ provinsi: [], kategori_1: [], kategori_2: [] });
   const [filters, setFilters] = useState({ provinsi: 'all', kategori_1: 'all', kategori_2: 'all' });
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, totalItems: 0 });
+  
   const [modals, setModals] = useState({ marketSounding: false, history: false, analysisResult: false });
   const [historyData, setHistoryData] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -87,6 +88,7 @@ export default function Home() {
         const mapJsonData = await mapRes.json();
         const productsData = await productsRes.json();
         const historyLogs = await historyRes.json();
+        
         setFilterOptions(optionsData);
         setMapData(mapJsonData);
         setProducts(productsData.items);
