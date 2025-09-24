@@ -46,25 +46,19 @@ const Sidebar = ({ onOpenModal }) => {
 
 
 export default function Home() {
-  // State utama
   const [products, setProducts] = useState([]);
   const [mapData, setMapData] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // State untuk filter & paginasi
   const [filterOptions, setFilterOptions] = useState({ provinsi: [], kategori_1: [], kategori_2: [] });
   const [filters, setFilters] = useState({ provinsi: 'all', kategori_1: 'all', kategori_2: 'all' });
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, totalItems: 0 });
-  
-  // State untuk fitur Market Sounding
   const [modals, setModals] = useState({ marketSounding: false, history: false, analysisResult: false });
   const [historyData, setHistoryData] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
 
-  // Fungsi untuk mengambil data produk dari API
   const fetchProducts = useCallback(async (page, currentFilters) => {
     const tableContainer = document.querySelector("#table-container");
     if(tableContainer) tableContainer.style.opacity = '0.5';
@@ -76,12 +70,9 @@ export default function Home() {
       setProducts(data.items);
       setPagination({ page: data.page, totalPages: data.totalPages, totalItems: data.totalItems });
     } catch (e) { setError(e.message); } 
-    finally {
-      if(tableContainer) tableContainer.style.opacity = '1';
-    }
+    finally { if(tableContainer) tableContainer.style.opacity = '1'; }
   }, []);
 
-  // Mengambil semua data awal saat halaman dimuat
   useEffect(() => {
     const fetchInitialData = async () => {
       setLoading(true);
@@ -96,7 +87,6 @@ export default function Home() {
         const mapJsonData = await mapRes.json();
         const productsData = await productsRes.json();
         const historyLogs = await historyRes.json();
-        
         setFilterOptions(optionsData);
         setMapData(mapJsonData);
         setProducts(productsData.items);
@@ -108,7 +98,6 @@ export default function Home() {
     fetchInitialData();
   }, [fetchProducts]);
   
-  // --- FUNGSI-FUNGSI UNTUK MODAL & MARKET SOUNDING ---
   const openModal = (modalName) => setModals(prev => ({ ...prev, [modalName]: true }));
   const closeModal = (modalName) => setModals(prev => ({ ...prev, [modalName]: false }));
 
@@ -177,7 +166,6 @@ export default function Home() {
     if (modals.history) fetchHistory();
   }, [modals.history]);
 
-  // --- FUNGSI UNTUK FILTER & PAGINASI ---
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters(prevFilters => {
@@ -274,7 +262,7 @@ export default function Home() {
               )}
             </div>
           </div>
-        </div>
+        </main>
       </div>
       
       {/* --- MODALS --- */}
