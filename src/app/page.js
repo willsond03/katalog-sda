@@ -28,6 +28,22 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   );
 };
 
+const Sidebar = ({ onOpenModal }) => {
+    return (
+        <aside className="w-64 bg-zinc-900 border-r border-zinc-800 flex-col hidden lg:flex">
+            <div className="p-4 border-b border-zinc-800">
+                <h1 className="text-xl font-bold text-white">E-Katalog SDA</h1>
+                <p className="text-xs text-zinc-400">Dashboard Monitoring</p>
+            </div>
+            <nav className="flex-1 p-4 space-y-2">
+                <a href="#" className="flex items-center p-2 rounded-lg bg-zinc-800 text-white font-semibold"><span>Dashboard</span></a>
+                <a href="#" onClick={() => onOpenModal('marketSounding')} className="flex items-center p-2 rounded-lg hover:bg-zinc-800 text-zinc-300"><span>Input Market Sounding</span></a>
+                <a href="#" onClick={() => onOpenModal('history')} className="flex items-center p-2 rounded-lg hover:bg-zinc-800 text-zinc-300"><span>Histori Market Sounding</span></a>
+            </nav>
+        </aside>
+    );
+};
+
 
 export default function Home() {
   // State utama
@@ -74,7 +90,7 @@ export default function Home() {
           fetch('/api/filter-options'),
           fetch('/api/map-data'),
           fetch('/api/products?page=1&provinsi=all&kategori_1=all&kategori_2=all'),
-          fetch('/api/market-sounding') // Ambil data histori di awal untuk dropdown analisa
+          fetch('/api/market-sounding')
         ]);
         const optionsData = await optionsRes.json();
         const mapJsonData = await mapRes.json();
@@ -85,7 +101,7 @@ export default function Home() {
         setMapData(mapJsonData);
         setProducts(productsData.items);
         setPagination({ page: productsData.page, totalPages: productsData.totalPages, totalItems: productsData.totalItems });
-        setHistoryData(historyLogs); // Simpan data histori
+        setHistoryData(historyLogs);
       } catch (error) { setError(error.message); } 
       finally { setLoading(false); }
     };
@@ -128,7 +144,7 @@ export default function Home() {
       alert('Data Market Sounding berhasil disimpan!');
       closeModal('marketSounding');
       event.target.reset();
-      fetchHistory(); // Otomatis refresh data histori
+      fetchHistory();
     } catch (error) {
       alert('Gagal mengirim data: ' + error.message);
     } finally {
@@ -179,17 +195,12 @@ export default function Home() {
 
   return (
     <>
-      <div className="bg-black text-gray-300 min-h-screen font-sans">
-        <div className="container mx-auto p-4 md:p-8">
+      <div className="flex h-screen bg-black text-gray-300 font-sans">
+        <Sidebar onOpenModal={openModal} />
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto">
           <header className="mb-8 space-y-8">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">Dashboard E-Katalog SDA</h1>
-              <p className="text-zinc-400">Menampilkan data produk dari Cloudflare D1</p>
-            </div>
-            <div className="flex space-x-4">
-              <button onClick={() => openModal('marketSounding')} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Input Market Sounding</button>
-              <button onClick={() => openModal('history')} className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">Histori Market Sounding</button>
-            </div>
+            <h1 className="text-3xl md:text-4xl font-bold text-white">Dashboard Analitik Produk</h1>
+            
             <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-xl">
               <h3 className="text-lg font-semibold text-white mb-4">Analisis Market Sounding</h3>
               <div className="flex flex-col md:flex-row gap-4 items-end">
@@ -207,6 +218,7 @@ export default function Home() {
                 <button onClick={runComparison} className="w-full md:w-auto bg-emerald-600 text-white px-4 h-10 rounded-lg hover:bg-emerald-700">Jalankan Analisis</button>
               </div>
             </div>
+            
             <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-xl">
               <h2 className="text-lg font-semibold text-white mb-4">Filter Data</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
