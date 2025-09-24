@@ -24,3 +24,14 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Perbaikan untuk z-index Peta Leaflet agar tidak menutupi modal */
+.leaflet-pane, .leaflet-tile, .leaflet-shadow-pane, .leaflet-overlay-pane, .leaflet-marker-pane, .leaflet-tooltip-pane, .leaflet-popup-pane {
+    z-index: 10 !important;
+}
+
+.leaflet-control-container {
+    z-index: 20 !important;
+}
+
+/* Modal kita memiliki z-index 50, jadi akan selalu di atas */
