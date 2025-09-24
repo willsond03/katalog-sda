@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 
+// --- Komponen-komponen ---
 const Map = dynamic(
   () => import('../components/Map'), 
   { ssr: false, loading: () => <div className="flex items-center justify-center h-full"><p>Memuat peta...</p></div> }
@@ -42,6 +43,7 @@ const Sidebar = ({ onOpenModal }) => {
         </aside>
     );
 };
+
 
 export default function Home() {
   const [products, setProducts] = useState([]);
@@ -291,7 +293,14 @@ export default function Home() {
                   <table className="min-w-full">
                     <thead className="bg-zinc-800 sticky top-0"><tr><th className="px-6 py-3 text-left text-xs font-semibold text-zinc-400 uppercase">Tanggal</th><th className="px-6 py-3 text-left text-xs font-semibold text-zinc-400 uppercase">Balai</th><th className="px-6 py-3 text-left text-xs font-semibold text-zinc-400 uppercase">Wilayah</th><th className="px-6 py-3 text-left text-xs font-semibold text-zinc-400 uppercase">Paket Pekerjaan</th></tr></thead>
                     <tbody className="divide-y divide-zinc-800">
-                      {historyData.map((log) => (<tr key={log.id}><td className="px-6 py-4 text-sm whitespace-nowrap">{log.tanggal}</td><td className="px-6 py-4 text-sm whitespace-nowrap">{log.balai}</td><td className="px-6 py-4 text-sm whitespace-nowrap">{log.wilayah}</td><td className="px-6 py-4 text-sm">{log.paket_pekerjaan}</td></tr>))}
+                      {historyData.map((log) => (
+                        <tr key={log.id}>
+                          <td className="px-6 py-4 text-sm text-zinc-300 whitespace-nowrap">{log.tanggal}</td>
+                          <td className="px-6 py-4 text-sm text-zinc-300 whitespace-nowrap">{log.balai}</td>
+                          <td className="px-6 py-4 text-sm text-zinc-300 whitespace-nowrap">{log.wilayah}</td>
+                          <td className="px-6 py-4 text-sm text-zinc-300">{log.paket_pekerjaan}</td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 ) : (
