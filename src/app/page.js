@@ -1,18 +1,12 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import dynamic from 'next/dynamic'; // <-- Tambahan untuk memuat peta
+import dynamic from 'next/dynamic';
 
-// --- KOMPONEN BARU UNTUK PETA ---
-// Kita muat komponen Peta secara dinamis untuk mencegah error saat build di server
 const Map = dynamic(
   () => import('../components/Map'), 
-  { 
-    ssr: false, // Memastikan peta hanya dirender di browser
-    loading: () => <div className="flex items-center justify-center h-full"><p>Memuat peta...</p></div>
-  }
+  { ssr: false, loading: () => <div className="flex items-center justify-center h-full"><p>Memuat peta...</p></div> }
 );
 
-// --- KOMPONEN PAGINASI (TETAP SAMA) ---
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   const getPaginationRange = () => {
     const delta = 2; const range = [];
@@ -41,9 +35,8 @@ export default function Home() {
   const [filterOptions, setFilterOptions] = useState({ provinsi: [], kategori_1: [], kategori_2: [] });
   const [filters, setFilters] = useState({ provinsi: 'all', kategori_1: 'all', kategori_2: 'all' });
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, totalItems: 0 });
-  const [mapData, setMapData] = useState({}); // <-- State baru untuk data peta
+  const [mapData, setMapData] = useState({});
 
-  // Fungsi fetchProducts tidak berubah
   const fetchProducts = useCallback(async (page, currentFilters) => {
     setLoading(true); setError(null);
     try {
@@ -56,14 +49,13 @@ export default function Home() {
     } catch (e) { setError(e.message); } finally { setLoading(false); }
   }, []);
 
-  // useEffect dimodifikasi untuk mengambil data peta juga
   useEffect(() => {
     const fetchInitialData = async () => {
       setLoading(true);
       try {
         const [optionsRes, mapRes, productsRes] = await Promise.all([
           fetch('/api/filter-options'),
-          fetch('/api/map-data'), // Panggil API data peta
+          fetch('/api/map-data'),
           fetch('/api/products?page=1&provinsi=all&kategori_1=all&kategori_2=all')
         ]);
         const optionsData = await optionsRes.json();
@@ -71,8 +63,9 @@ export default function Home() {
         const productsData = await productsRes.json();
         
         setFilterOptions(optionsData);
-        setMapData(mapJsonData); // Simpan data peta
+        setMapData(mapJsonData);
         setProducts(productsData.items);
+        // PERBAIKAN BUG 'data is not defined' ADA DI SINI
         setPagination({ page: productsData.page, totalPages: productsData.totalPages, totalItems: productsData.totalItems });
       } catch (error) {
         console.error("Gagal memuat data awal:", error);
@@ -82,7 +75,7 @@ export default function Home() {
       }
     };
     fetchInitialData();
-  }, []); // Dijalankan sekali saja di awal
+  }, [fetchProducts]);
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -107,7 +100,6 @@ export default function Home() {
           <p className="text-zinc-400">Menampilkan data produk dari Cloudflare D1</p>
         </header>
 
-        {/* Filter Section (tidak berubah) */}
         <div className="mb-8 p-6 bg-zinc-900 border border-zinc-800 rounded-xl">
           <h2 className="text-lg font-semibold text-white mb-4">Filter Data</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -125,25 +117,23 @@ export default function Home() {
                 {filterOptions.kategori_1 && filterOptions.kategori_1.map(opt => <option key={opt} value={opt}>{opt}</option>)}
               </select>
             </div>
-            <div>
-              <label htmlFor="kategori_2" className="block text-sm font-medium text-zinc-400">Kategori 2</label>
-              <select name="kategori_2" value={filters.kategori_2} onChange={handleFilterChange} className="mt-1 block w-full bg-zinc-800 border-zinc-700 rounded-md shadow-sm text-white h-10 px-3">
+             <div>
+                <label htmlFor="kategori_2" className="block text-sm font-medium text-zinc-400">Kategori 2</label>
+                <select name="kategori_2" value={filters.kategori_2} onChange={handleFilterChange} className="mt-1 block w-full bg-zinc-800 border-zinc-700 rounded-md shadow-sm text-white h-10 px-3">
                 <option value="all">Semua Kategori 2</option>
                 {filterOptions.kategori_2 && filterOptions.kategori_2.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-              </select>
+                </select>
             </div>
           </div>
         </div>
 
-        {/* Layout Utama: Peta di kiri, Tabel di kanan */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           <div className="lg:col-span-3 bg-zinc-900 border border-zinc-800 rounded-xl shadow p-4 h-[65vh]">
             <h2 className="text-lg font-semibold text-white mb-4">Persebaran Produk</h2>
-            <Map mapData={mapData} /> {/* <-- PETA DITAMPILKAN DI SINI */}
+            <Map mapData={mapData} />
           </div>
-
           <div className="lg:col-span-2 bg-zinc-900 border border-zinc-800 rounded-xl shadow">
-            {loading && !products.length ? <div className="text-center py-20 text-zinc-400">Memuat data produk...</div> : 
+            {loading && !products.length ? <div className="text-center py-20 text-zinc-400">Memuat data...</div> : 
              error ? <div className="text-center py-20 text-red-400">Error: {error}</div> : (
               <div className="p-6">
                 <div className="mb-4 text-sm text-zinc-400">
@@ -159,7 +149,7 @@ export default function Home() {
                     </thead>
                     <tbody className="divide-y divide-zinc-800">
                       {products.length > 0 ? products.map(p => (
-                        <tr key={p.id} className="hover:bg-zinc-800">
+                        <tr key={p.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-white">{p.nama_produk}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-400">{p.provinsi}</td>
                         </tr>
@@ -176,7 +166,6 @@ export default function Home() {
             )}
           </div>
         </div>
-
       </div>
     </div>
   );
