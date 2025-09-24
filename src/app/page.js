@@ -283,17 +283,40 @@ export default function Home() {
         </div>
       )}
 
+      {/* --- MODAL HISTORI (VERSI FINAL) --- */}
       {modals.history && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
           <div className="bg-zinc-900 p-8 rounded-xl border border-zinc-800 w-full max-w-5xl">
-            <div className="flex justify-between items-center mb-4"><h2 className="text-xl font-bold text-white">Histori Market Sounding</h2><button onClick={() => closeModal('history')} className="text-zinc-400 text-2xl font-bold">&times;</button></div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-white">Histori Market Sounding</h2>
+              <button onClick={() => closeModal('history')} className="text-zinc-400 text-2xl font-bold">&times;</button>
+            </div>
             <div className="overflow-y-auto max-h-[70vh]">
               {loadingHistory ? <p className="text-center">Memuat histori...</p> : 
-                <table className="min-w-full"><thead className="bg-zinc-800 sticky top-0"><tr><th className="px-6 py-3 text-left text-xs font-semibold text-zinc-400 uppercase">Tanggal</th><th className="px-6 py-3 text-left text-xs font-semibold text-zinc-400 uppercase">Balai</th><th className="px-6 py-3 text-left text-xs font-semibold text-zinc-400 uppercase">Wilayah</th><th className="px-6 py-3 text-left text-xs font-semibold text-zinc-400 uppercase">Paket Pekerjaan</th></tr></thead>
-                  <tbody className="divide-y divide-zinc-800">
-                    {historyData.map((log) => (<tr key={log.id}><td className="px-6 py-4 text-sm">{log.tanggal}</td><td className="px-6 py-4 text-sm">{log.balai}</td><td className="px-6 py-4 text-sm">{log.wilayah}</td><td className="px-6 py-4 text-sm">{log.paket_pekerjaan}</td></tr>))}
-                  </tbody>
-                </table>
+                (historyData.length > 0 ? (
+                  <table className="min-w-full">
+                    <thead className="bg-zinc-800 sticky top-0">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-zinc-400 uppercase">Tanggal</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-zinc-400 uppercase">Balai</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-zinc-400 uppercase">Wilayah</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-zinc-400 uppercase">Paket Pekerjaan</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-800">
+                      {historyData.map((log) => (
+                        <tr key={log.id}>
+                          <td className="px-6 py-4 text-sm whitespace-nowrap">{log.tanggal}</td>
+                          <td className="px-6 py-4 text-sm whitespace-nowrap">{log.balai}</td>
+                          <td className="px-6 py-4 text-sm whitespace-nowrap">{log.wilayah}</td>
+                          <td className="px-6 py-4 text-sm">{log.paket_pekerjaan}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p className="text-center text-zinc-500 py-10">Tidak ada data histori.</p>
+                ))
               }
             </div>
           </div>
