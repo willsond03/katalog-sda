@@ -283,7 +283,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* --- MODAL HISTORI (VERSI FINAL) --- */}
+      {/* --- MODAL HISTORI (VERSI FINAL & PERBAIKAN) --- */}
       {modals.history && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
           <div className="bg-zinc-900 p-8 rounded-xl border border-zinc-800 w-full max-w-5xl">
@@ -292,8 +292,8 @@ export default function Home() {
               <button onClick={() => closeModal('history')} className="text-zinc-400 text-2xl font-bold">&times;</button>
             </div>
             <div className="overflow-y-auto max-h-[70vh]">
-              {loadingHistory ? <p className="text-center">Memuat histori...</p> : 
-                (historyData.length > 0 ? (
+              {loadingHistory ? <p className="text-center py-10">Memuat histori...</p> : 
+                (historyData && historyData.length > 0 ? (
                   <table className="min-w-full">
                     <thead className="bg-zinc-800 sticky top-0">
                       <tr>
