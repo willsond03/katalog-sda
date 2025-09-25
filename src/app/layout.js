@@ -1,7 +1,7 @@
 // Lokasi: src/app/layout.js
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Sidebar from "../components/Sidebar";
+import "leaflet/dist/leaflet.css"; // <-- TAMBAHKAN IMPORT CSS LEAFLET DI SINI
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -13,14 +13,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="id">
-      <body className={`${inter.className} bg-gray-100 text-gray-800`}>
-        <div className="flex h-screen">
-          <Sidebar />
-          <main className="flex-1 overflow-y-auto bg-gray-50">
-            {children}
-          </main>
-        </div>
-      </body>
+      <body className={inter.className}>{children}</body>
     </html>
   );
 }

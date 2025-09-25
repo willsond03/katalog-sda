@@ -97,7 +97,10 @@ export default function MarketSoundingPage() {
   return (
     <>
       <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-        <header>
+        <div className="lg:hidden">
+          {/* Placeholder for the mobile header content if needed */}
+        </div>
+        <header className="pt-16 lg:pt-0">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Market Sounding</h1>
         </header>
 
