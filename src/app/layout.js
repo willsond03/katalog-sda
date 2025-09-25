@@ -1,7 +1,7 @@
 // Lokasi: src/app/layout.js
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Sidebar from "../components/Sidebar"; // Impor Sidebar baru
+import Sidebar from "../components/Sidebar";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -13,11 +13,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="id">
-      <body className={`${inter.className} bg-gray-50 text-gray-800`}>
+      <body className={`${inter.className} bg-gray-100 text-gray-800`}>
         <div className="flex h-screen">
           <Sidebar />
-          {/* {children} adalah tempat halaman (Dashboard atau Market Sounding) akan ditampilkan */}
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 overflow-y-auto bg-gray-50">
             {children}
           </main>
         </div>

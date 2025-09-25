@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 
 const Map = dynamic(() => import('../components/Map'), { 
   ssr: false, 
-  loading: () => <div className="flex items-center justify-center h-full"><p>Memuat peta...</p></div> 
+  loading: () => <div className="flex items-center justify-center h-full text-gray-500"><p>Memuat peta...</p></div> 
 });
 
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
@@ -89,39 +89,39 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="p-4 md:p-8 space-y-8">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <header>
-        <h1 className="text-3xl font-bold text-gray-800">Dashboard Analitik Produk</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Dashboard Analitik Produk</h1>
       </header>
       
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
-        <div className="lg:col-span-3 bg-white border border-gray-200 rounded-xl shadow-sm p-4 h-[60vh] flex flex-col">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Persebaran Produk</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+        <div className="lg:col-span-3 bg-white border border-gray-200 rounded-lg shadow-sm p-4 h-[65vh] flex flex-col">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex-shrink-0">Persebaran Produk</h2>
           <div className="flex-grow min-h-0">
             {!loading && <Map mapData={mapData} />}
             {loading && <div className="flex items-center justify-center h-full text-gray-500"><p>Memuat data peta...</p></div>}
           </div>
         </div>
-        <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Filter Data</h2>
+        <div className="lg:col-span-2 bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Filter Data</h2>
           <div className="space-y-4">
             <div>
               <label htmlFor="provinsi" className="block text-sm font-medium text-gray-700">Provinsi</label>
-              <select name="provinsi" value={filters.provinsi} onChange={handleFilterChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm h-10 px-3 focus:border-blue-500 focus:ring-blue-500">
+              <select name="provinsi" value={filters.provinsi} onChange={handleFilterChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                 <option value="all">Semua Provinsi</option>
                 {filterOptions.provinsi && filterOptions.provinsi.map(opt => <option key={opt} value={opt}>{opt}</option>)}
               </select>
             </div>
             <div>
               <label htmlFor="kategori_1" className="block text-sm font-medium text-gray-700">Kategori 1</label>
-              <select name="kategori_1" value={filters.kategori_1} onChange={handleFilterChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm h-10 px-3 focus:border-blue-500 focus:ring-blue-500">
+              <select name="kategori_1" value={filters.kategori_1} onChange={handleFilterChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                 <option value="all">Semua Kategori 1</option>
                 {filterOptions.kategori_1 && filterOptions.kategori_1.map(opt => <option key={opt} value={opt}>{opt}</option>)}
               </select>
             </div>
             <div>
               <label htmlFor="kategori_2" className="block text-sm font-medium text-gray-700">Kategori 2</label>
-              <select name="kategori_2" value={filters.kategori_2} onChange={handleFilterChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm h-10 px-3 focus:border-blue-500 focus:ring-blue-500">
+              <select name="kategori_2" value={filters.kategori_2} onChange={handleFilterChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                 <option value="all">Semua Kategori 2</option>
                 {filterOptions.kategori_2 && filterOptions.kategori_2.map(opt => <option key={opt} value={opt}>{opt}</option>)}
               </select>
@@ -130,26 +130,30 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div id="table-container" className="bg-white border border-gray-200 rounded-xl shadow-sm transition-opacity duration-300">
-        {loading && !products.length ? <div className="text-center py-20 text-gray-500">Memuat data produk...</div> : 
-         error ? <div className="text-center py-20 text-red-500">Error: {error}</div> : (
-          <div className="p-6">
-            <div className="mb-4 text-sm text-gray-600">
-              Menampilkan {products.length} dari {pagination.totalItems.toLocaleString('id-ID')} produk. (Halaman {pagination.page} dari {pagination.totalPages})
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead className="bg-gray-50"><tr className="border-b border-gray-200"><th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama Produk</th><th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Perusahaan</th><th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Provinsi</th></tr></thead>
-                <tbody className="divide-y divide-gray-200">
-                  {products.length > 0 ? products.map(p => (<tr key={p.id} className="hover:bg-gray-50"><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{p.nama_produk}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.perusahaan}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.provinsi}</td></tr>)) : (<tr><td colSpan="3" className="text-center py-10 text-gray-500">Tidak ada data yang cocok dengan filter Anda.</td></tr>)}
-                </tbody>
-              </table>
-            </div>
+      <div id="table-container" className="bg-white border border-gray-200 rounded-lg shadow-sm transition-opacity duration-300">
+        <div className="p-6">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-2">
+            <h2 className="text-lg font-semibold text-gray-900">Detail Produk</h2>
+            <p className="text-sm text-gray-600">
+              Menampilkan {products.length > 0 ? `${(pagination.page - 1) * 20 + 1} - ${(pagination.page - 1) * 20 + products.length}` : 0} dari {pagination.totalItems.toLocaleString('id-ID')} produk
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-gray-50"><tr className="border-b border-gray-200"><th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama Produk</th><th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Perusahaan</th><th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Provinsi</th></tr></thead>
+              <tbody className="divide-y divide-gray-200">
+                {loading && !products.length ? <tr><td colSpan="3" className="text-center py-10 text-gray-500">Memuat data...</td></tr> : 
+                 error ? <tr><td colSpan="3" className="text-center py-10 text-red-500">Error: {error}</td></tr> :
+                 (products.length > 0 ? products.map(p => (<tr key={p.id} className="hover:bg-gray-50"><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{p.nama_produk}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.perusahaan}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.provinsi}</td></tr>)) : (<tr><td colSpan="3" className="text-center py-10 text-gray-500">Tidak ada data yang cocok dengan filter Anda.</td></tr>))}
+              </tbody>
+            </table>
+          </div>
+          {pagination.totalPages > 1 && (
             <div className="mt-6">
               <Pagination currentPage={pagination.page} totalPages={pagination.totalPages} onPageChange={handlePageChange} />
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
