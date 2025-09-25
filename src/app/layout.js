@@ -14,7 +14,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="id">
-      <body className={inter.className}>{children}
+      <body className={inter.className}>
 		<div className="flex h-screen">
           <Sidebar /> {/* <-- 3. Tampilkan Sidebar di sini */}
           <main className="flex-1 overflow-y-auto">
