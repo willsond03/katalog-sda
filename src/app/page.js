@@ -2,7 +2,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import FilterPanel from '../components/FilterPanel';
+import FilterModal from '../components/FilterModal';
 
 // Komponen Peta
 const Map = dynamic(() => import('../components/Map'), { 
@@ -31,19 +31,17 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   );
 };
 
+
 export default function DashboardPage() {
-  // --- STATES ---
   const [products, setProducts] = useState([]);
   const [mapData, setMapData] = useState({});
   const [loading, setLoading] = useState({ options: true, products: true });
   const [error, setError] = useState(null);
-  
   const [filterOptions, setFilterOptions] = useState({ provinsi: [], kategori_1: [], kategori_2: [] });
   const [filters, setFilters] = useState({ provinsi: 'all', kategori_1: 'all', kategori_2: 'all' });
-
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, totalItems: 0 });
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // --- DATA FETCHING ---
   const fetchApiData = useCallback(async (endpoint, paramsObj = {}) => {
     const cleanedParams = Object.fromEntries(Object.entries(paramsObj).filter(([_, v]) => v != null));
     const params = new URLSearchParams(cleanedParams);
@@ -55,7 +53,6 @@ export default function DashboardPage() {
     return response.json();
   }, []);
 
-  // useEffect HANYA untuk memuat data awal (peta dan filter)
   useEffect(() => {
     const fetchInitialData = async () => {
       setError(null);
@@ -73,11 +70,8 @@ export default function DashboardPage() {
     fetchInitialData();
   }, [fetchApiData]);
 
-  // useEffect untuk MEMPERBARUI OPSI FILTER saat filter induk berubah (cascading)
   useEffect(() => {
-    // Abaikan render awal, karena data sudah diambil di useEffect pertama
     if (filters.provinsi === 'all' && filters.kategori_1 === 'all') return;
-    
     const updateFilterOptions = async () => {
        setLoading(prev => ({ ...prev, options: true }));
        try {
@@ -89,7 +83,6 @@ export default function DashboardPage() {
     updateFilterOptions();
   }, [filters.provinsi, filters.kategori_1, fetchApiData]);
 
-  // useEffect untuk MEMPERBARUI DATA PRODUK (TABEL) setiap kali filter atau halaman berubah
   useEffect(() => {
     const updateProducts = async () => {
       setLoading(prev => ({...prev, products: true}));
@@ -110,22 +103,10 @@ export default function DashboardPage() {
     updateProducts();
   }, [filters, pagination.page, fetchApiData]);
 
-
-  // --- EVENT HANDLERS ---
-  const handleFilterChange = (name, value) => {
-    setFilters(prevFilters => {
-      const newFilters = { ...prevFilters, [name]: value };
-      if (name === 'provinsi') {
-        newFilters.kategori_1 = 'all';
-        newFilters.kategori_2 = 'all';
-      }
-      if (name === 'kategori_1') {
-        newFilters.kategori_2 = 'all';
-      }
-      return newFilters;
-    });
-    // Reset ke halaman 1 setiap kali filter diubah
+  const handleApplyFilters = (newAppliedFilters) => {
+    setFilters(newAppliedFilters);
     setPagination(prev => ({ ...prev, page: 1 }));
+    setIsModalOpen(false);
   };
 
   const handlePageChange = (newPage) => {
@@ -136,28 +117,28 @@ export default function DashboardPage() {
     }
   };
 
-  // --- RENDER ---
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <div className="lg:hidden h-16" />
-      <header>
+      <header className="flex justify-between items-center">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Dashboard Analitik Produk</h1>
+        <div className="hidden lg:block">
+           <button 
+             onClick={() => setIsModalOpen(true)}
+             className="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium hover:bg-gray-50 flex items-center space-x-2"
+           >
+             <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V10zM15 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path></svg>
+             <span>Filter Data</span>
+           </button>
+        </div>
       </header>
       
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
-        <div className="lg:col-span-3 bg-white border border-gray-200 rounded-lg shadow-sm p-4 h-[65vh] flex flex-col">
+        <div className="lg:col-span-5 bg-white border border-gray-200 rounded-lg shadow-sm p-4 h-[65vh] flex flex-col">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex-shrink-0">Persebaran Produk</h2>
           <div className="flex-grow min-h-0">
             {loading.options ? <div className="flex items-center justify-center h-full text-gray-500"><p>Memuat data peta...</p></div> : <Map mapData={mapData} />}
           </div>
-        </div>
-        
-        <div className="lg:col-span-2">
-          <FilterPanel 
-            filterOptions={filterOptions}
-            filters={filters}
-            onFilterChange={handleFilterChange}
-          />
         </div>
       </div>
 
@@ -186,6 +167,24 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      <FilterModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onApply={handleApplyFilters}
+        filterOptions={filterOptions}
+        currentFilters={filters}
+      />
+
+       <div className="lg:hidden fixed bottom-4 right-4 z-30">
+        <button 
+            onClick={() => setIsModalOpen(true)}
+            className="px-4 py-3 bg-blue-600 text-white rounded-full shadow-lg flex items-center space-x-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V10zM15 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path></svg>
+            <span>Filter</span>
+        </button>
+       </div>
     </div>
   );
 }
