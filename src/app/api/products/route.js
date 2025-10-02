@@ -23,7 +23,15 @@ export async function GET(request) {
       conditions.push("kategori_1 = ?");
       queryParams.push(searchParams.get('kategori_1'));
     }
-    // Tambahkan filter lain di sini jika perlu
+    
+    // =======================================================================
+    // == PERBAIKAN: Tambahkan logika filter untuk kategori_2 yang hilang ==
+    // =======================================================================
+    if (searchParams.get('kategori_2') && searchParams.get('kategori_2') !== 'all') {
+      conditions.push("kategori_2 = ?");
+      queryParams.push(searchParams.get('kategori_2'));
+    }
+    // =======================================================================
 
     if (conditions.length > 0) {
       baseQuery += " WHERE " + conditions.join(" AND ");
@@ -35,8 +43,9 @@ export async function GET(request) {
     const totalItems = countResult[0].total;
 
     // 2. Query untuk mengambil data per halaman yang sudah terfilter
-    const dataStmt = db.prepare(`SELECT id, nama_produk, perusahaan, provinsi ${baseQuery} ORDER BY id LIMIT ? OFFSET ?`)
-      .bind(...queryParams, itemsPerPage, offset);
+    // Pastikan ORDER BY dan LIMIT/OFFSET berada di luar bind parameter utama untuk query WHERE
+    const dataQuery = `SELECT id, nama_produk, perusahaan, provinsi ${baseQuery} ORDER BY id LIMIT ? OFFSET ?`;
+    const dataStmt = db.prepare(dataQuery).bind(...queryParams, itemsPerPage, offset);
     const { results: items } = await dataStmt.all();
 
     const response = {
@@ -48,6 +57,7 @@ export async function GET(request) {
 
     return new Response(JSON.stringify(response), { status: 200, headers: { 'Content-Type': 'application/json' } });
   } catch(e) {
+    console.error("API Products Error:", e.message);
     return new Response(JSON.stringify({error: e.message}), { status: 500 });
   }
 }
