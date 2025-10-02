@@ -2,7 +2,11 @@
 import { useState, Fragment } from 'react';
 import { Combobox, Transition } from '@headlessui/react';
 
-const ChevronUpDownIcon = () => ( /* ... SVG Icon tidak berubah ... */ );
+const ChevronUpDownIcon = () => (
+    <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path fillRule="evenodd" d="M10 3a.75.75 0 01.55.24l3.25 3.5a.75.75 0 11-1.1 1.02L10 4.852 7.3 7.76a.75.75 0 01-1.1-1.02l3.25-3.5A.75.75 0 0110 3zM10 17a.75.75 0 01-.55-.24l-3.25-3.5a.75.75 0 011.1-1.02L10 15.148l2.7-2.91a.75.75 0 011.1 1.02l-3.25 3.5A.75.75 0 0110 17z" clipRule="evenodd" />
+    </svg>
+);
 
 export default function SearchableSelect({ label, options, selectedValue, onChange, placeholder, disabled }) {
   const [query, setQuery] = useState('');
