@@ -14,15 +14,21 @@ export default function FilterPanel({ filterOptions, filters, onFilterChange }) 
 
   // Mengelompokkan Kategori 2 berdasarkan kode induknya, misal: (A.1.01)
   const groupedKategori2 = useMemo(() => {
-    if (!filterOptions.kategori_2) return {};
+    if (!filterOptions.kategori_2 || filterOptions.kategori_2.length === 0) return {};
+    
     return filterOptions.kategori_2.reduce((acc, item) => {
-      const match = item.match(/\(A\.[.0-9a-zA-Z]+\)/); // Regex yang lebih baik untuk kode
-      const key = match ? match[0] : 'Lain-lain';
-      
-      if (!acc[key]) {
-        acc[key] = [];
+      // Ekstrak bagian dalam kurung, misal: "A.1.01.a)"
+      const codeMatch = item.match(/\(([^)]+)\)/);
+      if (!codeMatch) return acc;
+
+      // Ambil 3 bagian pertama dari kode: "A", "1", "01" -> menjadi "(A.1.01)"
+      const parts = codeMatch[1].split('.');
+      const parentKey = `(${parts.slice(0, 3).join('.')})`;
+
+      if (!acc[parentKey]) {
+        acc[parentKey] = [];
       }
-      acc[key].push(item);
+      acc[parentKey].push(item);
       return acc;
     }, {});
   }, [filterOptions.kategori_2]);

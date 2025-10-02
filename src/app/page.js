@@ -1,6 +1,6 @@
 // Lokasi: src/app/page.js
 'use client';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import FilterPanel from '../components/FilterPanel';
 
@@ -35,14 +35,13 @@ export default function DashboardPage() {
   // --- STATES ---
   const [products, setProducts] = useState([]);
   const [mapData, setMapData] = useState({});
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState({ options: true, products: true });
   const [error, setError] = useState(null);
   
   const [filterOptions, setFilterOptions] = useState({ provinsi: [], kategori_1: [], kategori_2: [] });
   const [filters, setFilters] = useState({ provinsi: 'all', kategori_1: 'all', kategori_2: 'all' });
 
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, totalItems: 0 });
-  const isInitialMount = useRef(true);
 
   // --- DATA FETCHING ---
   const fetchApiData = useCallback(async (endpoint, paramsObj = {}) => {
@@ -56,60 +55,61 @@ export default function DashboardPage() {
     return response.json();
   }, []);
 
-  // useEffect untuk memuat data awal saat komponen pertama kali mount
+  // useEffect HANYA untuk memuat data awal (peta dan filter)
   useEffect(() => {
     const fetchInitialData = async () => {
-      setLoading(true);
       setError(null);
+      setLoading(prev => ({ ...prev, options: true, products: true }));
       try {
-        const [optionsData, mapJsonData, productsData] = await Promise.all([
+        const [optionsData, mapJsonData] = await Promise.all([
           fetchApiData('filter-options', {}),
           fetchApiData('map-data', {}),
-          fetchApiData('products', { page: 1, ...filters })
         ]);
         setFilterOptions(optionsData);
         setMapData(mapJsonData);
-        setProducts(productsData.items);
-        setPagination({ page: productsData.page, totalPages: productsData.totalPages, totalItems: productsData.totalItems });
       } catch (error) { setError(error.message); } 
-      finally { setLoading(false); }
+      finally { setLoading(prev => ({ ...prev, options: false })); }
     };
     fetchInitialData();
-     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchApiData]);
 
-  // useEffect untuk menangani SEMUA perubahan filter secara bertingkat
+  // useEffect untuk MEMPERBARUI OPSI FILTER saat filter induk berubah (cascading)
   useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
+    // Abaikan render awal, karena data sudah diambil di useEffect pertama
+    if (filters.provinsi === 'all' && filters.kategori_1 === 'all') return;
+    
+    const updateFilterOptions = async () => {
+       setLoading(prev => ({ ...prev, options: true }));
+       try {
+         const newOptions = await fetchApiData('filter-options', { provinsi: filters.provinsi, kategori_1: filters.kategori_1 });
+         setFilterOptions(newOptions);
+       } catch (e) { setError(e.message); }
+       finally { setLoading(prev => ({ ...prev, options: false })); }
+    };
+    updateFilterOptions();
+  }, [filters.provinsi, filters.kategori_1, fetchApiData]);
 
-    const updateDataBasedOnFilters = async () => {
+  // useEffect untuk MEMPERBARUI DATA PRODUK (TABEL) setiap kali filter atau halaman berubah
+  useEffect(() => {
+    const updateProducts = async () => {
+      setLoading(prev => ({...prev, products: true}));
+      setError(null);
       const tableContainer = document.querySelector("#table-container");
       if(tableContainer) tableContainer.style.opacity = '0.5';
-      setError(null);
+
       try {
-        const [newOptions, newProducts] = await Promise.all([
-          fetchApiData('filter-options', filters),
-          fetchApiData('products', { page: 1, ...filters })
-        ]);
-        setFilterOptions(newOptions);
+        const newProducts = await fetchApiData('products', { page: pagination.page, ...filters });
         setProducts(newProducts.items);
-        setPagination({ page: newProducts.page, totalPages: newProducts.totalPages, totalItems: newProducts.totalItems });
-      } catch (e) {
-        setError(e.message);
-      } finally {
+        setPagination(prev => ({ ...prev, totalPages: newProducts.totalPages, totalItems: newProducts.totalItems }));
+      } catch (e) { setError(e.message); } 
+      finally {
+        setLoading(prev => ({...prev, products: false}));
         if(tableContainer) tableContainer.style.opacity = '1';
       }
     };
+    updateProducts();
+  }, [filters, pagination.page, fetchApiData]);
 
-    const debounceTimeout = setTimeout(() => {
-        updateDataBasedOnFilters();
-    }, 300); // Debounce untuk mencegah request berlebihan
-
-    return () => clearTimeout(debounceTimeout);
-  }, [filters, fetchApiData]);
 
   // --- EVENT HANDLERS ---
   const handleFilterChange = (name, value) => {
@@ -124,19 +124,15 @@ export default function DashboardPage() {
       }
       return newFilters;
     });
+    // Reset ke halaman 1 setiap kali filter diubah
+    setPagination(prev => ({ ...prev, page: 1 }));
   };
 
-  const handlePageChange = async (newPage) => {
+  const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setPagination(prev => ({ ...prev, page: newPage }));
       const tableContainer = document.querySelector("#table-container");
-      if(tableContainer) tableContainer.style.opacity = '0.5';
-      try {
-        const newProducts = await fetchApiData('products', { page: newPage, ...filters });
-        setProducts(newProducts.items);
-        setPagination(prev => ({ ...prev, page: newProducts.page }));
-        window.scrollTo(0, tableContainer.offsetTop); // Auto-scroll ke tabel
-      } catch(e) { setError(e.message) }
-      finally { if(tableContainer) tableContainer.style.opacity = '1'; }
+      if (tableContainer) window.scrollTo(0, tableContainer.offsetTop);
     }
   };
 
@@ -152,7 +148,7 @@ export default function DashboardPage() {
         <div className="lg:col-span-3 bg-white border border-gray-200 rounded-lg shadow-sm p-4 h-[65vh] flex flex-col">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex-shrink-0">Persebaran Produk</h2>
           <div className="flex-grow min-h-0">
-            {!loading && Object.keys(mapData).length > 0 ? <Map mapData={mapData} /> : <div className="flex items-center justify-center h-full text-gray-500"><p>Memuat data peta...</p></div>}
+            {loading.options ? <div className="flex items-center justify-center h-full text-gray-500"><p>Memuat data peta...</p></div> : <Map mapData={mapData} />}
           </div>
         </div>
         
@@ -177,7 +173,7 @@ export default function DashboardPage() {
             <table className="min-w-full">
               <thead className="bg-gray-50"><tr className="border-b border-gray-200"><th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama Produk</th><th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Perusahaan</th><th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Provinsi</th></tr></thead>
               <tbody className="divide-y divide-gray-200">
-                {loading && !products.length ? <tr><td colSpan="3" className="text-center py-10 text-gray-500">Memuat data awal...</td></tr> : 
+                {loading.products ? <tr><td colSpan="3" className="text-center py-10 text-gray-500">Memuat data produk...</td></tr> : 
                  error ? <tr><td colSpan="3" className="text-center py-10 text-red-500">Error: {error}</td></tr> :
                  (products.length > 0 ? products.map(p => (<tr key={p.id} className="hover:bg-gray-50"><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{p.nama_produk}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.perusahaan}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.provinsi}</td></tr>)) : (<tr><td colSpan="3" className="text-center py-10 text-gray-500">Tidak ada data yang cocok dengan filter Anda.</td></tr>))}
               </tbody>
