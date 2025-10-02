@@ -10,7 +10,6 @@ export async function GET(request) {
     const db = process.env.DB;
 
     // --- Query Dinamis ---
-    // Inisialisasi query dasar dan array parameter untuk mencegah SQL Injection
     let provinsiQuery = "SELECT DISTINCT provinsi FROM produk WHERE provinsi IS NOT NULL ORDER BY provinsi ASC";
     let kategori1Query = "SELECT DISTINCT kategori_1 FROM produk WHERE kategori_1 IS NOT NULL";
     let kategori2Query = "SELECT DISTINCT kategori_2 FROM produk WHERE kategori_2 IS NOT NULL";
@@ -18,7 +17,6 @@ export async function GET(request) {
     const paramsKategori1 = [];
     const paramsKategori2 = [];
 
-    // Jika ada parameter provinsi, tambahkan klausa WHERE ke query Kategori 1 & 2
     if (provinsiParam && provinsiParam !== 'all') {
       kategori1Query += " AND provinsi = ?";
       kategori2Query += " AND provinsi = ?";
@@ -26,17 +24,14 @@ export async function GET(request) {
       paramsKategori2.push(provinsiParam);
     }
     
-    // Jika ada parameter kategori_1, tambahkan klausa WHERE ke query Kategori 2
     if (kategori1Param && kategori1Param !== 'all') {
       kategori2Query += " AND kategori_1 = ?";
       paramsKategori2.push(kategori1Param);
     }
 
-    // Tambahkan ORDER BY di akhir
     kategori1Query += " ORDER BY kategori_1 ASC";
     kategori2Query += " ORDER BY kategori_2 ASC";
 
-    // Jalankan semua query secara paralel dengan parameter yang sudah aman
     const [provinsi, kategori_1, kategori_2] = await db.batch([
       db.prepare(provinsiQuery),
       db.prepare(kategori1Query).bind(...paramsKategori1),

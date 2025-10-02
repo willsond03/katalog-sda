@@ -4,13 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import FilterModal from '../components/FilterModal';
 
-// Komponen Peta
-const Map = dynamic(() => import('../components/Map'), { 
-  ssr: false, 
-  loading: () => <div className="flex items-center justify-center h-full text-gray-500"><p>Memuat peta...</p></div> 
-});
+const Map = dynamic(() => import('../components/Map'), { ssr: false, loading: () => <div className="flex items-center justify-center h-full text-gray-500"><p>Memuat peta...</p></div> });
 
-// Komponen Paginasi
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   const getPaginationRange = () => {
     const delta = 2; const range = [];
@@ -30,7 +25,6 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
     </div>
   );
 };
-
 
 export default function DashboardPage() {
   const [products, setProducts] = useState([]);
@@ -71,7 +65,14 @@ export default function DashboardPage() {
   }, [fetchApiData]);
 
   useEffect(() => {
-    if (filters.provinsi === 'all' && filters.kategori_1 === 'all') return;
+    if (filters.provinsi === 'all' && filters.kategori_1 === 'all') {
+        const fetchAllOptions = async () => {
+            const allOptions = await fetchApiData('filter-options', {});
+            setFilterOptions(allOptions);
+        }
+        fetchAllOptions();
+        return;
+    };
     const updateFilterOptions = async () => {
        setLoading(prev => ({ ...prev, options: true }));
        try {
@@ -89,7 +90,6 @@ export default function DashboardPage() {
       setError(null);
       const tableContainer = document.querySelector("#table-container");
       if(tableContainer) tableContainer.style.opacity = '0.5';
-
       try {
         const newProducts = await fetchApiData('products', { page: pagination.page, ...filters });
         setProducts(newProducts.items);
@@ -123,10 +123,7 @@ export default function DashboardPage() {
       <header className="flex justify-between items-center">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Dashboard Analitik Produk</h1>
         <div className="hidden lg:block">
-           <button 
-             onClick={() => setIsModalOpen(true)}
-             className="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium hover:bg-gray-50 flex items-center space-x-2"
-           >
+           <button onClick={() => setIsModalOpen(true)} className="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium hover:bg-gray-50 flex items-center space-x-2">
              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V10zM15 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path></svg>
              <span>Filter Data</span>
            </button>
@@ -146,9 +143,7 @@ export default function DashboardPage() {
         <div className="p-6">
           <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-2">
             <h2 className="text-lg font-semibold text-gray-900">Detail Produk</h2>
-            <p className="text-sm text-gray-600">
-              Menampilkan {products.length > 0 ? `${(pagination.page - 1) * 20 + 1} - ${(pagination.page - 1) * 20 + products.length}` : 0} dari {pagination.totalItems.toLocaleString('id-ID')} produk
-            </p>
+            <p className="text-sm text-gray-600">Menampilkan {products.length > 0 ? `${(pagination.page - 1) * 20 + 1} - ${(pagination.page - 1) * 20 + products.length}` : 0} dari {pagination.totalItems.toLocaleString('id-ID')} produk</p>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full">
@@ -160,27 +155,23 @@ export default function DashboardPage() {
               </tbody>
             </table>
           </div>
-          {pagination.totalPages > 1 && (
-            <div className="mt-6">
-              <Pagination currentPage={pagination.page} totalPages={pagination.totalPages} onPageChange={handlePageChange} />
-            </div>
-          )}
+          {pagination.totalPages > 1 && (<div className="mt-6"><Pagination currentPage={pagination.page} totalPages={pagination.totalPages} onPageChange={handlePageChange} /></div>)}
         </div>
       </div>
-
-      <FilterModal 
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onApply={handleApplyFilters}
-        filterOptions={filterOptions}
-        currentFilters={filters}
-      />
+      
+      {isModalOpen && (
+          <FilterModal 
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onApply={handleApplyFilters}
+            initialOptions={filterOptions}
+            currentFilters={filters}
+            fetcher={fetchApiData}
+          />
+      )}
 
        <div className="lg:hidden fixed bottom-4 right-4 z-30">
-        <button 
-            onClick={() => setIsModalOpen(true)}
-            className="px-4 py-3 bg-blue-600 text-white rounded-full shadow-lg flex items-center space-x-2"
-          >
+        <button onClick={() => setIsModalOpen(true)} className="px-4 py-3 bg-blue-600 text-white rounded-full shadow-lg flex items-center space-x-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V10zM15 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path></svg>
             <span>Filter</span>
         </button>
