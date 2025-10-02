@@ -2,10 +2,9 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import FilterModal from '../components/FilterModal';
+import FilterPanel from '../components/FilterPanel';
 
 const Map = dynamic(() => import('../components/Map'), { ssr: false, loading: () => <div className="flex items-center justify-center h-full text-gray-500"><p>Memuat peta...</p></div> });
-
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   const getPaginationRange = () => {
     const delta = 2; const range = [];
@@ -27,155 +26,133 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
 };
 
 export default function DashboardPage() {
-  const [products, setProducts] = useState([]);
-  const [mapData, setMapData] = useState({});
-  const [loading, setLoading] = useState({ options: true, products: true });
-  const [error, setError] = useState(null);
-  const [filterOptions, setFilterOptions] = useState({ provinsi: [], kategori_1: [], kategori_2: [] });
-  const [filters, setFilters] = useState({ provinsi: 'all', kategori_1: 'all', kategori_2: 'all' });
-  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, totalItems: 0 });
-  const [isModalOpen, setIsModalOpen] = useState(false);
+    const [products, setProducts] = useState([]);
+    const [mapData, setMapData] = useState({});
+    const [loading, setLoading] = useState({ options: true, products: true });
+    const [error, setError] = useState(null);
+    const [filterOptions, setFilterOptions] = useState({ provinsi: [], kategori_1: [], kategori_2: [] });
+    const [filters, setFilters] = useState({ provinsi: 'all', kategori_1: 'all', kategori_2: 'all' });
+    const [pagination, setPagination] = useState({ page: 1, totalPages: 1, totalItems: 0 });
 
-  const fetchApiData = useCallback(async (endpoint, paramsObj = {}) => {
-    const cleanedParams = Object.fromEntries(Object.entries(paramsObj).filter(([_, v]) => v != null));
-    const params = new URLSearchParams(cleanedParams);
-    const response = await fetch(`/api/${endpoint}?${params}`);
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error || `HTTP error! status: ${response.status}`);
-    }
-    return response.json();
-  }, []);
-
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      setError(null);
-      setLoading(prev => ({ ...prev, options: true, products: true }));
-      try {
-        const [optionsData, mapJsonData] = await Promise.all([
-          fetchApiData('filter-options', {}),
-          fetchApiData('map-data', {}),
-        ]);
-        setFilterOptions(optionsData);
-        setMapData(mapJsonData);
-      } catch (error) { setError(error.message); } 
-      finally { setLoading(prev => ({ ...prev, options: false })); }
-    };
-    fetchInitialData();
-  }, [fetchApiData]);
-
-  useEffect(() => {
-    if (filters.provinsi === 'all' && filters.kategori_1 === 'all') {
-        const fetchAllOptions = async () => {
-            const allOptions = await fetchApiData('filter-options', {});
-            setFilterOptions(allOptions);
+    const fetchApiData = useCallback(async (endpoint, paramsObj = {}) => {
+        const cleanedParams = Object.fromEntries(Object.entries(paramsObj).filter(([_, v]) => v != null));
+        const params = new URLSearchParams(cleanedParams);
+        const response = await fetch(`/api/${endpoint}?${params}`);
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || `HTTP error! status: ${response.status}`);
         }
-        fetchAllOptions();
-        return;
+        return response.json();
+    }, []);
+
+    useEffect(() => {
+        const fetchInitialData = async () => {
+          setError(null);
+          setLoading(prev => ({ ...prev, options: true, products: true }));
+          try {
+            const [optionsData, mapJsonData] = await Promise.all([ fetchApiData('filter-options', {}), fetchApiData('map-data', {})]);
+            setFilterOptions(optionsData);
+            setMapData(mapJsonData);
+          } catch (error) { setError(error.message); } 
+          finally { setLoading(prev => ({ ...prev, options: false })); }
+        };
+        fetchInitialData();
+    }, [fetchApiData]);
+
+    useEffect(() => {
+        const updateFilterOptions = async () => {
+           setLoading(prev => ({ ...prev, options: true }));
+           try {
+             const newOptions = await fetchApiData('filter-options', { provinsi: filters.provinsi, kategori_1: filters.kategori_1 });
+             setFilterOptions(newOptions);
+           } catch (e) { setError(e.message); }
+           finally { setLoading(prev => ({ ...prev, options: false })); }
+        };
+        updateFilterOptions();
+    }, [filters.provinsi, filters.kategori_1, fetchApiData]);
+
+    useEffect(() => {
+        const updateProducts = async () => {
+          setLoading(prev => ({...prev, products: true}));
+          setError(null);
+          const tableContainer = document.querySelector("#table-container");
+          if(tableContainer) tableContainer.style.opacity = '0.5';
+          try {
+            const newProducts = await fetchApiData('products', { page: pagination.page, ...filters });
+            setProducts(newProducts.items);
+            setPagination(prev => ({ ...prev, totalPages: newProducts.totalPages, totalItems: newProducts.totalItems }));
+          } catch (e) { setError(e.message); } 
+          finally {
+            setLoading(prev => ({...prev, products: false}));
+            if(tableContainer) tableContainer.style.opacity = '1';
+          }
+        };
+        const debounceTimeout = setTimeout(() => updateProducts(), 300);
+        return () => clearTimeout(debounceTimeout);
+    }, [filters, pagination.page, fetchApiData]);
+
+    const handleFilterChange = (name, value) => {
+        setFilters(prevFilters => {
+          const newFilters = { ...prevFilters, [name]: value };
+          if (name === 'provinsi') {
+            newFilters.kategori_1 = 'all';
+            newFilters.kategori_2 = 'all';
+          }
+          if (name === 'kategori_1') {
+            newFilters.kategori_2 = 'all';
+          }
+          return newFilters;
+        });
+        setPagination(prev => ({ ...prev, page: 1 }));
     };
-    const updateFilterOptions = async () => {
-       setLoading(prev => ({ ...prev, options: true }));
-       try {
-         const newOptions = await fetchApiData('filter-options', { provinsi: filters.provinsi, kategori_1: filters.kategori_1 });
-         setFilterOptions(newOptions);
-       } catch (e) { setError(e.message); }
-       finally { setLoading(prev => ({ ...prev, options: false })); }
+
+    const handlePageChange = (newPage) => {
+        if (newPage >= 1 && newPage <= pagination.totalPages) {
+            setPagination(prev => ({ ...prev, page: newPage }));
+            const tableContainer = document.querySelector("#table-container");
+            if (tableContainer) window.scrollTo(0, tableContainer.offsetTop);
+        }
     };
-    updateFilterOptions();
-  }, [filters.provinsi, filters.kategori_1, fetchApiData]);
 
-  useEffect(() => {
-    const updateProducts = async () => {
-      setLoading(prev => ({...prev, products: true}));
-      setError(null);
-      const tableContainer = document.querySelector("#table-container");
-      if(tableContainer) tableContainer.style.opacity = '0.5';
-      try {
-        const newProducts = await fetchApiData('products', { page: pagination.page, ...filters });
-        setProducts(newProducts.items);
-        setPagination(prev => ({ ...prev, totalPages: newProducts.totalPages, totalItems: newProducts.totalItems }));
-      } catch (e) { setError(e.message); } 
-      finally {
-        setLoading(prev => ({...prev, products: false}));
-        if(tableContainer) tableContainer.style.opacity = '1';
-      }
-    };
-    updateProducts();
-  }, [filters, pagination.page, fetchApiData]);
+    return (
+        <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+            <header>
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Dashboard Analitik Produk</h1>
+            </header>
+            
+            <FilterPanel 
+                filterOptions={filterOptions}
+                currentFilters={filters}
+                onFilterChange={handleFilterChange}
+                isLoading={loading.options}
+            />
 
-  const handleApplyFilters = (newAppliedFilters) => {
-    setFilters(newAppliedFilters);
-    setPagination(prev => ({ ...prev, page: 1 }));
-    setIsModalOpen(false);
-  };
-
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= pagination.totalPages) {
-      setPagination(prev => ({ ...prev, page: newPage }));
-      const tableContainer = document.querySelector("#table-container");
-      if (tableContainer) window.scrollTo(0, tableContainer.offsetTop);
-    }
-  };
-
-  return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-      <div className="lg:hidden h-16" />
-      <header className="flex justify-between items-center">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Dashboard Analitik Produk</h1>
-        <div className="hidden lg:block">
-           <button onClick={() => setIsModalOpen(true)} className="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium hover:bg-gray-50 flex items-center space-x-2">
-             <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V10zM15 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path></svg>
-             <span>Filter Data</span>
-           </button>
+            <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 h-[65vh] flex flex-col">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex-shrink-0">Persebaran Produk</h2>
+                <div className="flex-grow min-h-0">
+                    {loading.options ? <div className="flex items-center justify-center h-full text-gray-500"><p>Memuat data peta...</p></div> : <Map mapData={mapData} />}
+                </div>
+            </div>
+            
+            <div id="table-container" className="bg-white border border-gray-200 rounded-lg shadow-sm">
+                <div className="p-6">
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-2">
+                        <h2 className="text-lg font-semibold text-gray-900">Detail Produk</h2>
+                        <p className="text-sm text-gray-600">Menampilkan {products.length > 0 ? `${(pagination.page - 1) * 20 + 1} - ${(pagination.page - 1) * 20 + products.length}` : 0} dari {pagination.totalItems.toLocaleString('id-ID')} produk</p>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full">
+                        <thead className="bg-gray-50"><tr className="border-b border-gray-200"><th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama Produk</th><th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Perusahaan</th><th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Provinsi</th></tr></thead>
+                        <tbody className="divide-y divide-gray-200">
+                            {loading.products ? <tr><td colSpan="3" className="text-center py-10 text-gray-500">Memuat data produk...</td></tr> : 
+                            error ? <tr><td colSpan="3" className="text-center py-10 text-red-500">Error: {error}</td></tr> :
+                            (products.length > 0 ? products.map(p => (<tr key={p.id} className="hover:bg-gray-50"><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{p.nama_produk}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.perusahaan}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.provinsi}</td></tr>)) : (<tr><td colSpan="3" className="text-center py-10 text-gray-500">Tidak ada data yang cocok dengan filter Anda.</td></tr>))}
+                        </tbody>
+                        </table>
+                    </div>
+                    {pagination.totalPages > 1 && (<div className="mt-6"><Pagination currentPage={pagination.page} totalPages={pagination.totalPages} onPageChange={handlePageChange} /></div>)}
+                </div>
+            </div>
         </div>
-      </header>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
-        <div className="lg:col-span-5 bg-white border border-gray-200 rounded-lg shadow-sm p-4 h-[65vh] flex flex-col">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex-shrink-0">Persebaran Produk</h2>
-          <div className="flex-grow min-h-0">
-            {loading.options ? <div className="flex items-center justify-center h-full text-gray-500"><p>Memuat data peta...</p></div> : <Map mapData={mapData} />}
-          </div>
-        </div>
-      </div>
-
-      <div id="table-container" className="bg-white border border-gray-200 rounded-lg shadow-sm transition-opacity duration-300">
-        <div className="p-6">
-          <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-2">
-            <h2 className="text-lg font-semibold text-gray-900">Detail Produk</h2>
-            <p className="text-sm text-gray-600">Menampilkan {products.length > 0 ? `${(pagination.page - 1) * 20 + 1} - ${(pagination.page - 1) * 20 + products.length}` : 0} dari {pagination.totalItems.toLocaleString('id-ID')} produk</p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead className="bg-gray-50"><tr className="border-b border-gray-200"><th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama Produk</th><th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Perusahaan</th><th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Provinsi</th></tr></thead>
-              <tbody className="divide-y divide-gray-200">
-                {loading.products ? <tr><td colSpan="3" className="text-center py-10 text-gray-500">Memuat data produk...</td></tr> : 
-                 error ? <tr><td colSpan="3" className="text-center py-10 text-red-500">Error: {error}</td></tr> :
-                 (products.length > 0 ? products.map(p => (<tr key={p.id} className="hover:bg-gray-50"><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{p.nama_produk}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.perusahaan}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.provinsi}</td></tr>)) : (<tr><td colSpan="3" className="text-center py-10 text-gray-500">Tidak ada data yang cocok dengan filter Anda.</td></tr>))}
-              </tbody>
-            </table>
-          </div>
-          {pagination.totalPages > 1 && (<div className="mt-6"><Pagination currentPage={pagination.page} totalPages={pagination.totalPages} onPageChange={handlePageChange} /></div>)}
-        </div>
-      </div>
-      
-      {isModalOpen && (
-          <FilterModal 
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            onApply={handleApplyFilters}
-            initialOptions={filterOptions}
-            currentFilters={filters}
-            fetcher={fetchApiData}
-          />
-      )}
-
-       <div className="lg:hidden fixed bottom-4 right-4 z-30">
-        <button onClick={() => setIsModalOpen(true)} className="px-4 py-3 bg-blue-600 text-white rounded-full shadow-lg flex items-center space-x-2">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V10zM15 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path></svg>
-            <span>Filter</span>
-        </button>
-       </div>
-    </div>
-  );
+    );
 }
