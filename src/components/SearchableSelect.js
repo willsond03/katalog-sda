@@ -4,22 +4,20 @@ import { Combobox, Transition } from '@headlessui/react';
 
 const ChevronUpDownIcon = () => (
     <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-        <path fillRule="evenodd" d="M10 3a.75.75 0 01.55.24l3.25 3.5a.75.75 0 11-1.1 1.02L10 4.852 7.3 7.76a.75.75 0 01-1.1-1.02l3.25-3.5A.75.75 0 0110 3zM10 17a.75.75 0 01-.55-.24l-3.25-3.5a.75.75 0 011.1-1.02L10 15.148l2.7-2.91a.75.75 0 011.1 1.02l-3.25 3.5A.75.75 0 0110 17z" clipRule="evenodd" />
+        <path fillRule="evenodd" d="M10 3a.75.75
+ 0 01.55.24l3.25 3.5a.75.75 0 11-1.1 1.02L10 4.852 7.3 7.76a.75.75 0 01-1.1-1.02l3.25-3.5A.75.75 0 0110 3zM10 17a.75.75 0 01-.55-.24l-3.25-3.5a.75.75 0 011.1-1.02L10 15.148l2.7-2.91a.75.75 0 011.1 1.02l-3.25 3.5A.75.75 0 0110 17z" clipRule="evenodd" />
     </svg>
 );
 
 export default function SearchableSelect({ label, options, selectedValue, onChange, placeholder, disabled }) {
   const [query, setQuery] = useState('');
 
-  // Fungsi untuk menampilkan teks saat item dipilih
   const getDisplayValue = () => {
     if (!selectedValue || selectedValue === 'all') return '';
     const selectedItem = options.find(opt => opt.id === selectedValue);
-    // Tampilkan versi pendek: Kode + Judul
     return selectedItem ? `${selectedItem.code} ${selectedItem.title}` : '';
   };
 
-  // Logika pencarian sekarang mencari di judul dan subjudul
   const filteredOptions =
     query === ''
       ? options
@@ -56,11 +54,16 @@ export default function SearchableSelect({ label, options, selectedValue, onChan
               ) : (
                 filteredOptions.map((opt) => (
                   <Combobox.Option key={opt.id} value={opt.id} className={({ active }) => `relative cursor-pointer select-none py-2.5 pl-4 pr-4 ${active ? 'bg-blue-600 text-white' : 'text-gray-900'}`}>
-                    {/* --- INI BAGIAN UTAMA PERUBAHAN TAMPILAN --- */}
-                    <div className="flex flex-col">
-                      <span className="font-medium truncate">{opt.code} {opt.title}</span>
-                      <span className={`text-sm ${active ? 'text-blue-100' : 'text-gray-500'} truncate`}>{opt.subtitle}</span>
-                    </div>
+                    {/* --- PERBAIKAN DI SINI ---
+                      JSX di dalam Combobox.Option perlu dibungkus dengan fungsi ({ active }) 
+                      agar bisa mengakses variabel 'active'.
+                    */}
+                    {({ active }) => (
+                      <div className="flex flex-col">
+                        <span className="font-medium truncate">{opt.code} {opt.title}</span>
+                        <span className={`text-sm ${active ? 'text-blue-100' : 'text-gray-500'} truncate`}>{opt.subtitle}</span>
+                      </div>
+                    )}
                   </Combobox.Option>
                 ))
               )}
