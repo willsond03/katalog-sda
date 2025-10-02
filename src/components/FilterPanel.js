@@ -3,24 +3,17 @@
 import { useMemo } from 'react';
 import SearchableSelect from './SearchableSelect';
 
-const parseCategory = (categoryString) => {
-  if (typeof categoryString !== 'string' || categoryString.trim() === '') {
-    return { id: categoryString || '', code: 'Invalid', title: 'Data Kategori Tidak Valid', subtitle: '' };
-  }
-  const match = categoryString.match(/\((.*?)\)\s*-\s*(.*?)\)\s*(.*)/);
-  if (match) {
-    return { id: categoryString, code: `(${match[1]})`, subtitle: match[2].trim(), title: match[3].trim() };
-  }
-  return { id: categoryString, code: '', title: categoryString, subtitle: 'Tanpa grup' };
-};
-
 export default function FilterPanel({ filterOptions, currentFilters, onFilterChange, isLoading }) {
-  const k1Options = useMemo(() => filterOptions.kategori_1?.map(parseCategory) || [], [filterOptions.kategori_1]);
-  const k2Options = useMemo(() => filterOptions.kategori_2?.map(parseCategory) || [], [filterOptions.kategori_2]);
+  // --- PERUBAHAN UTAMA: Logika parsing dihapus ---
+  // Data langsung diubah ke format {id, name} tanpa dipecah-pecah
+  const k1Options = useMemo(() => filterOptions.kategori_1?.map(k1 => ({ id: k1, name: k1 })) || [], [filterOptions.kategori_1]);
+  const k2Options = useMemo(() => filterOptions.kategori_2?.map(k2 => ({ id: k2, name: k2 })) || [], [filterOptions.kategori_2]);
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+        
+        {/* Filter Provinsi */}
         <div>
           <label htmlFor="provinsi" className="block text-sm font-medium text-gray-700">Provinsi</label>
           <select
@@ -33,6 +26,8 @@ export default function FilterPanel({ filterOptions, currentFilters, onFilterCha
             {filterOptions.provinsi?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
           </select>
         </div>
+
+        {/* Filter Kategori 1 */}
         <div className="relative">
            <SearchableSelect
               label="Kategori 1"
@@ -43,6 +38,8 @@ export default function FilterPanel({ filterOptions, currentFilters, onFilterCha
               disabled={isLoading}
             />
         </div>
+        
+        {/* Filter Kategori 2 */}
         <div className="relative">
            <SearchableSelect
               label="Kategori 2"
@@ -53,6 +50,7 @@ export default function FilterPanel({ filterOptions, currentFilters, onFilterCha
               disabled={isLoading || currentFilters.kategori_1 === 'all'}
             />
         </div>
+
       </div>
       {isLoading && <div className="text-sm text-gray-500 text-center pt-2">Memuat opsi...</div>}
     </div>
