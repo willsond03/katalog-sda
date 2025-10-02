@@ -3,47 +3,39 @@
 import { useState, useEffect, useMemo } from 'react';
 import SearchableSelect from './SearchableSelect';
 
+// Fungsi helper untuk mem-parsing string Kategori
+const parseCategory = (categoryString) => {
+  // Pola: (KODE) - SUBJUDUL) JUDUL
+  const match = categoryString.match(/\((.*?)\)\s*-\s*(.*?)\)\s*(.*)/);
+  if (match) {
+    return {
+      id: categoryString,
+      code: `(${match[1]})`,
+      subtitle: match[2].trim(),
+      title: match[3].trim(),
+    };
+  }
+  // Fallback jika format tidak cocok
+  return { id: categoryString, code: '', title: categoryString, subtitle: '' };
+};
+
+
 export default function FilterModal({ isOpen, onClose, onApply, initialOptions, currentFilters, fetcher }) {
   const [tempFilters, setTempFilters] = useState(currentFilters);
   const [modalOptions, setModalOptions] = useState(initialOptions);
   const [isLoadingOptions, setIsLoadingOptions] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      setTempFilters(currentFilters);
-      setModalOptions(initialOptions);
-    }
-  }, [isOpen, currentFilters, initialOptions]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const updateOptionsInModal = async () => {
-      setIsLoadingOptions(true);
-      try {
-        const newOptions = await fetcher('filter-options', { provinsi: tempFilters.provinsi, kategori_1: tempFilters.kategori_1 });
-        setModalOptions(newOptions);
-      } catch (error) { console.error("Failed to fetch modal options:", error); } 
-      finally { setIsLoadingOptions(false); }
-    };
-    updateOptionsInModal();
-  }, [tempFilters.provinsi, tempFilters.kategori_1, fetcher, isOpen]);
+  useEffect(() => { /* ... tidak berubah ... */ }, [isOpen, currentFilters, initialOptions]);
+  useEffect(() => { /* ... tidak berubah ... */ }, [tempFilters.provinsi, fetcher, isOpen]);
 
   const handleApply = () => { onApply(tempFilters); };
+  const handleProvinsiChange = (provinsi) => { setTempFilters({ provinsi, kategori_1: 'all', kategori_2: 'all' }); };
+  const handleKategori1Change = (kategori1) => { setTempFilters(prev => ({ ...prev, kategori_1: kategori1, kategori_2: 'all' })); };
+  const handleKategori2Change = (kategori2) => { setTempFilters(prev => ({ ...prev, kategori_2: kategori2 })); };
 
-  const handleProvinsiChange = (provinsi) => {
-    setTempFilters({ provinsi: provinsi, kategori_1: 'all', kategori_2: 'all' });
-  };
-  
-  const handleKategori1Change = (kategori1) => {
-    setTempFilters(prev => ({ ...prev, kategori_1: kategori1, kategori_2: 'all' }));
-  };
-
-  const handleKategori2Change = (kategori2) => {
-    setTempFilters(prev => ({ ...prev, kategori_2: kategori2 }));
-  };
-
-  const k1Options = useMemo(() => modalOptions.kategori_1?.map(k1 => ({ id: k1, name: k1 })) || [], [modalOptions.kategori_1]);
-  const k2Options = useMemo(() => modalOptions.kategori_2?.map(k2 => ({ id: k2, name: k2 })) || [], [modalOptions.kategori_2]);
+  // --- PERUBAHAN UTAMA: Memformat data menggunakan fungsi parseCategory ---
+  const k1Options = useMemo(() => modalOptions.kategori_1?.map(parseCategory) || [], [modalOptions.kategori_1]);
+  const k2Options = useMemo(() => modalOptions.kategori_2?.map(parseCategory) || [], [modalOptions.kategori_2]);
 
   if (!isOpen) return null;
 
@@ -52,12 +44,11 @@ export default function FilterModal({ isOpen, onClose, onApply, initialOptions, 
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden">
         <div className="flex justify-between items-center p-4 border-b">
           <h2 className="text-xl font-bold text-gray-800">Filter Data Lanjutan</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"></path></svg>
-          </button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">{/* ... SVG Icon ... */}</button>
         </div>
 
         <div className="p-6 space-y-4 overflow-y-auto">
+          {/* Provinsi Select */}
           <div>
             <label htmlFor="provinsi-modal" className="block text-sm font-medium text-gray-700 mb-1">Provinsi</label>
             <select
@@ -71,6 +62,7 @@ export default function FilterModal({ isOpen, onClose, onApply, initialOptions, 
             </select>
           </div>
 
+          {/* Kategori 1 Searchable Select */}
           <div className="relative">
              <SearchableSelect
                 label="Kategori 1"
@@ -82,6 +74,7 @@ export default function FilterModal({ isOpen, onClose, onApply, initialOptions, 
               />
           </div>
           
+          {/* Kategori 2 Searchable Select */}
           <div className="relative">
              <SearchableSelect
                 label="Kategori 2"

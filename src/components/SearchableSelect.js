@@ -11,16 +11,22 @@ const ChevronUpDownIcon = () => (
 export default function SearchableSelect({ label, options, selectedValue, onChange, placeholder, disabled }) {
   const [query, setQuery] = useState('');
 
+  // Fungsi untuk menampilkan teks saat item dipilih
   const getDisplayValue = () => {
     if (!selectedValue || selectedValue === 'all') return '';
     const selectedItem = options.find(opt => opt.id === selectedValue);
-    return selectedItem ? selectedItem.name : '';
+    // Tampilkan versi pendek: Kode + Judul
+    return selectedItem ? `${selectedItem.code} ${selectedItem.title}` : '';
   };
 
+  // Logika pencarian sekarang mencari di judul dan subjudul
   const filteredOptions =
     query === ''
       ? options
-      : options.filter((opt) => opt.name.toLowerCase().includes(query.toLowerCase()));
+      : options.filter((opt) => 
+          opt.title.toLowerCase().includes(query.toLowerCase()) ||
+          opt.subtitle.toLowerCase().includes(query.toLowerCase())
+        );
 
   return (
     <div>
@@ -37,17 +43,11 @@ export default function SearchableSelect({ label, options, selectedValue, onChan
             <ChevronUpDownIcon />
           </Combobox.Button>
 
-          <Transition
-            as={Fragment}
-            leave="transition ease-in duration-100"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-            afterLeave={() => setQuery('')}
-          >
+          <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0" afterLeave={() => setQuery('')}>
             <Combobox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
               <Combobox.Option
                 value={'all'}
-                className={({ active }) => `relative cursor-pointer select-none py-2 px-4 ${active ? 'bg-blue-600 text-white' : 'text-gray-900'}`}
+                className={({ active }) => `relative cursor-pointer select-none py-2.5 px-4 ${active ? 'bg-blue-600 text-white' : 'text-gray-900'}`}
               >
                 Semua
               </Combobox.Option>
@@ -55,8 +55,12 @@ export default function SearchableSelect({ label, options, selectedValue, onChan
                 <div className="relative cursor-default select-none py-2 px-4 text-gray-700">Tidak ditemukan.</div>
               ) : (
                 filteredOptions.map((opt) => (
-                  <Combobox.Option key={opt.id} value={opt.id} className={({ active }) => `relative cursor-pointer select-none py-2 px-4 ${active ? 'bg-blue-600 text-white' : 'text-gray-900'}`}>
-                    <span className="block truncate">{opt.name}</span>
+                  <Combobox.Option key={opt.id} value={opt.id} className={({ active }) => `relative cursor-pointer select-none py-2.5 pl-4 pr-4 ${active ? 'bg-blue-600 text-white' : 'text-gray-900'}`}>
+                    {/* --- INI BAGIAN UTAMA PERUBAHAN TAMPILAN --- */}
+                    <div className="flex flex-col">
+                      <span className="font-medium truncate">{opt.code} {opt.title}</span>
+                      <span className={`text-sm ${active ? 'text-blue-100' : 'text-gray-500'} truncate`}>{opt.subtitle}</span>
+                    </div>
                   </Combobox.Option>
                 ))
               )}
