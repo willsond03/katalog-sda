@@ -9,7 +9,6 @@ export async function GET(request) {
     
     const db = process.env.DB;
 
-    // --- Query Dinamis ---
     let provinsiQuery = "SELECT DISTINCT provinsi FROM produk WHERE provinsi IS NOT NULL ORDER BY provinsi ASC";
     let kategori1Query = "SELECT DISTINCT kategori_1 FROM produk WHERE kategori_1 IS NOT NULL";
     let kategori2Query = "SELECT DISTINCT kategori_2 FROM produk WHERE kategori_2 IS NOT NULL";

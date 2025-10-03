@@ -11,14 +11,12 @@ const ChevronUpDownIcon = () => (
 export default function SearchableSelect({ label, options, selectedValue, onChange, placeholder, disabled }) {
   const [query, setQuery] = useState('');
 
-  // Menampilkan nama item yang dipilih di dalam input box
   const getDisplayValue = () => {
     if (!selectedValue || selectedValue === 'all') return '';
     const selectedItem = options.find(opt => opt.id === selectedValue);
     return selectedItem ? selectedItem.name : '';
   };
 
-  // Logika pencarian yang sederhana berdasarkan nama
   const filteredOptions =
     query === ''
       ? options
@@ -38,7 +36,6 @@ export default function SearchableSelect({ label, options, selectedValue, onChan
           <Combobox.Button className="absolute inset-y-0 right-0 flex items-center rounded-r-md px-2 focus:outline-none">
             <ChevronUpDownIcon />
           </Combobox.Button>
-
           <Transition
             as={Fragment}
             leave="transition ease-in duration-100"
@@ -58,7 +55,6 @@ export default function SearchableSelect({ label, options, selectedValue, onChan
               ) : (
                 filteredOptions.map((opt) => (
                   <Combobox.Option key={opt.id} value={opt.id} className={({ active }) => `relative cursor-pointer select-none py-2 px-4 ${active ? 'bg-blue-600 text-white' : 'text-gray-900'}`}>
-                    {/* TAMPILAN SATU BARIS SEDERHANA */}
                     <span className="block truncate">{opt.name}</span>
                   </Combobox.Option>
                 ))

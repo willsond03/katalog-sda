@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import FilterPanel from '../components/FilterPanel';
+import FilterBreadcrumb from '../components/FilterBreadcrumb';
 
 const Map = dynamic(() => import('../components/Map'), { ssr: false, loading: () => <div className="flex items-center justify-center h-full text-gray-500"><p>Memuat peta...</p></div> });
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
@@ -120,6 +121,11 @@ export default function DashboardPage() {
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Dashboard Analitik Produk</h1>
             </header>
             
+            <FilterBreadcrumb
+                filters={filters}
+                onClear={handleFilterChange}
+            />
+            
             <FilterPanel 
                 filterOptions={filterOptions}
                 currentFilters={filters}
@@ -142,12 +148,12 @@ export default function DashboardPage() {
                     </div>
                     <div className="overflow-x-auto">
                         <table className="min-w-full">
-                        <thead className="bg-gray-50"><tr className="border-b border-gray-200"><th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama Produk</th><th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Perusahaan</th><th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Provinsi</th></tr></thead>
-                        <tbody className="divide-y divide-gray-200">
-                            {loading.products ? <tr><td colSpan="3" className="text-center py-10 text-gray-500">Memuat data produk...</td></tr> : 
-                            error ? <tr><td colSpan="3" className="text-center py-10 text-red-500">Error: {error}</td></tr> :
-                            (products.length > 0 ? products.map(p => (<tr key={p.id} className="hover:bg-gray-50"><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{p.nama_produk}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.perusahaan}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.provinsi}</td></tr>)) : (<tr><td colSpan="3" className="text-center py-10 text-gray-500">Tidak ada data yang cocok dengan filter Anda.</td></tr>))}
-                        </tbody>
+                            <thead className="bg-gray-50"><tr className="border-b border-gray-200"><th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama Produk</th><th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Perusahaan</th><th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Provinsi</th></tr></thead>
+                            <tbody className="divide-y divide-gray-200">
+                                {loading.products ? <tr><td colSpan="3" className="text-center py-10 text-gray-500">Memuat data produk...</td></tr> : 
+                                error ? <tr><td colSpan="3" className="text-center py-10 text-red-500">Error: {error}</td></tr> :
+                                (products.length > 0 ? products.map(p => (<tr key={p.id} className="hover:bg-gray-50"><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{p.nama_produk}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.perusahaan}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.provinsi}</td></tr>)) : (<tr><td colSpan="3" className="text-center py-10 text-gray-500">Tidak ada data yang cocok dengan filter Anda.</td></tr>))}
+                            </tbody>
                         </table>
                     </div>
                     {pagination.totalPages > 1 && (<div className="mt-6"><Pagination currentPage={pagination.page} totalPages={pagination.totalPages} onPageChange={handlePageChange} /></div>)}
