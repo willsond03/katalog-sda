@@ -117,6 +117,8 @@ export default function DashboardPage() {
 
     return (
         <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+            <div className="h-16 lg:hidden" />
+
             <header>
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Dashboard Analitik Produk</h1>
             </header>
