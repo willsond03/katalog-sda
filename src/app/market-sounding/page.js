@@ -1,7 +1,8 @@
 // Lokasi: src/app/market-sounding/page.js
 'use client';
 import { useState, useEffect, useMemo } from 'react';
-import SearchableSelect from '../components/SearchableSelect'; // Impor komponen
+// --- PERBAIKAN DI SINI ---
+import SearchableSelect from '../../components/SearchableSelect'; 
 
 export default function MarketSoundingPage() {
   const [modals, setModals] = useState({ marketSounding: false, history: false });
