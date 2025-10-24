@@ -1,6 +1,7 @@
 // Lokasi: src/app/market-sounding/page.js
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import SearchableSelect from '../components/SearchableSelect'; // Impor komponen
 
 export default function MarketSoundingPage() {
   const [modals, setModals] = useState({ marketSounding: false, history: false });
@@ -9,6 +10,9 @@ export default function MarketSoundingPage() {
   const [analysisResult, setAnalysisResult] = useState(null);
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
   const [provinsiOptions, setProvinsiOptions] = useState([]);
+  
+  const [selectedEvent, setSelectedEvent] = useState('');
+  const [modalProvinsi, setModalProvinsi] = useState('');
 
   const openModal = (modalName) => setModals(prev => ({ ...prev, [modalName]: true }));
   const closeModal = (modalName) => setModals(prev => ({ ...prev, [modalName]: false }));
@@ -30,7 +34,7 @@ export default function MarketSoundingPage() {
     btn.textContent = "Menyimpan...";
     const formData = {
       balai: event.target.balai.value,
-      wilayah: event.target.provinsi.value,
+      wilayah: modalProvinsi,
       paket_pekerjaan: event.target.paket_pekerjaan.value,
       tanggal: event.target.tanggal.value,
     };
@@ -45,6 +49,7 @@ export default function MarketSoundingPage() {
       alert('Data Market Sounding berhasil disimpan!');
       closeModal('marketSounding');
       event.target.reset();
+      setModalProvinsi(provinsiOptions.length > 0 ? provinsiOptions[0] : '');
       fetchHistory();
     } catch (error) {
       alert('Gagal mengirim data: ' + error.message);
@@ -55,13 +60,15 @@ export default function MarketSoundingPage() {
   };
   
   const runComparison = async () => {
-    const eventSelect = document.getElementById('comparisonDate');
     const daysInput = document.getElementById('comparisonDay');
-    if (!eventSelect.value) { alert("Silakan pilih event terlebih dahulu."); return; }
+    if (!selectedEvent) { 
+        alert("Silakan pilih event terlebih dahulu."); 
+        return; 
+    }
     
     setLoadingAnalysis(true);
     setAnalysisResult(null);
-    const [eventDate, provinsi] = eventSelect.value.split(';');
+    const [eventDate, provinsi] = selectedEvent.split(';');
     try {
       const response = await fetch('/api/run-comparison', {
         method: 'POST',
@@ -85,6 +92,9 @@ export default function MarketSoundingPage() {
         setHistoryData(historyLogs);
         const optionsData = await optionsRes.json();
         setProvinsiOptions(optionsData.provinsi);
+        if (optionsData.provinsi.length > 0) {
+            setModalProvinsi(optionsData.provinsi[0]);
+        }
       } catch (error) { console.error("Gagal memuat data awal:", error); }
     };
     fetchInitialData();
@@ -93,6 +103,20 @@ export default function MarketSoundingPage() {
   useEffect(() => {
     if (modals.history) fetchHistory();
   }, [modals.history]);
+
+  const eventOptions = useMemo(() => {
+    return historyData.map(log => ({
+      id: `${log.tanggal};${log.wilayah}`,
+      name: `${log.balai}: ${log.paket_pekerjaan} (${log.tanggal})`
+    }));
+  }, [historyData]);
+
+  const provinsiOptionsForSelect = useMemo(() => {
+    return provinsiOptions.map(opt => ({
+      id: opt,
+      name: opt
+    }));
+  }, [provinsiOptions]);
 
   return (
     <>
@@ -104,7 +128,6 @@ export default function MarketSoundingPage() {
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Market Sounding</h1>
         </header>
 
-        {/* Kartu untuk Tombol Aksi */}
         <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
             <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
                 <button onClick={() => openModal('marketSounding')} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm transition duration-150">Input Market Sounding Baru</button>
@@ -112,16 +135,17 @@ export default function MarketSoundingPage() {
             </div>
         </div>
 
-        {/* Kartu untuk Panel Analisis */}
         <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Analisis Market Sounding</h3>
           <div className="flex flex-col md:flex-row gap-4 items-end">
             <div className="flex-1 w-full">
-              <label htmlFor="comparisonDate" className="block text-sm font-medium text-gray-700">Pilih Event</label>
-              <select id="comparisonDate" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                <option value="">Pilih Event dari Histori</option>
-                {historyData.map(log => <option key={log.id} value={`${log.tanggal};${log.wilayah}`}>{`${log.balai}: ${log.paket_pekerjaan} (${log.tanggal})`}</option>)}
-              </select>
+              <SearchableSelect
+                label="Pilih Event"
+                options={eventOptions}
+                selectedValue={selectedEvent}
+                onChange={setSelectedEvent}
+                placeholder="Pilih Event dari Histori..."
+              />
             </div>
             <div className="flex-1 w-full md:max-w-xs">
               <label htmlFor="comparisonDay" className="block text-sm font-medium text-gray-700">Analisis Perubahan (H+)</label>
@@ -133,7 +157,6 @@ export default function MarketSoundingPage() {
           </div>
         </div>
 
-        {/* Kartu untuk Hasil Analisis */}
         {loadingAnalysis && <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 text-center text-gray-600">Menganalisa data...</div>}
         {analysisResult && (
           <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
@@ -159,8 +182,28 @@ export default function MarketSoundingPage() {
         )}
       </div>
 
-      {/* Modal dan logikanya tidak berubah */}
-      {modals.marketSounding && ( <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"><div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md"><h2 className="text-xl font-bold mb-4 text-gray-800">Catat Market Sounding</h2><form onSubmit={handleMarketSoundingSubmit} className="space-y-4"><div><label htmlFor="balai" className="block text-sm text-gray-700">Balai</label><input type="text" id="balai" name="balai" required className="mt-1 block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"/></div><div><label htmlFor="provinsi-modal" className="block text-sm text-gray-700">Wilayah</label><select id="provinsi-modal" name="provinsi" required className="mt-1 block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500">{provinsiOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}</select></div><div><label htmlFor="paket_pekerjaan" className="block text-sm text-gray-700">Paket Pekerjaan</label><input type="text" id="paket_pekerjaan" name="paket_pekerjaan" required className="mt-1 block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"/></div><div><label htmlFor="tanggal" className="block text-sm text-gray-700">Tanggal</label><input type="date" id="tanggal" name="tanggal" required className="mt-1 block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"/></div><div className="flex justify-end space-x-4 pt-4"><button type="button" onClick={() => closeModal('marketSounding')} className="py-2 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg">Batal</button><button type="submit" className="py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">Simpan</button></div></form></div></div> )}
+      {modals.marketSounding && ( 
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+            <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md">
+                <h2 className="text-xl font-bold mb-4 text-gray-800">Catat Market Sounding</h2>
+                <form onSubmit={handleMarketSoundingSubmit} className="space-y-4">
+                    <div><label htmlFor="balai" className="block text-sm text-gray-700">Balai</label><input type="text" id="balai" name="balai" required className="mt-1 block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"/></div>
+                    <div>
+                        <SearchableSelect
+                            label="Wilayah"
+                            options={provinsiOptionsForSelect}
+                            selectedValue={modalProvinsi}
+                            onChange={setModalProvinsi}
+                            placeholder="Cari Wilayah..."
+                        />
+                    </div>
+                    <div><label htmlFor="paket_pekerjaan" className="block text-sm text-gray-700">Paket Pekerjaan</label><input type="text" id="paket_pekerjaan" name="paket_pekerjaan" required className="mt-1 block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"/></div>
+                    <div><label htmlFor="tanggal" className="block text-sm text-gray-700">Tanggal</label><input type="date" id="tanggal" name="tanggal" required className="mt-1 block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"/></div>
+                    <div className="flex justify-end space-x-4 pt-4"><button type="button" onClick={() => closeModal('marketSounding')} className="py-2 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg">Batal</button><button type="submit" className="py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">Simpan</button></div>
+                </form>
+            </div>
+        </div> 
+      )}
       {modals.history && ( <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"><div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-5xl"><div className="flex justify-between items-center mb-4"><h2 className="text-xl font-bold text-gray-800">Histori Market Sounding</h2><button onClick={() => closeModal('history')} className="text-gray-500 text-2xl font-bold">&times;</button></div><div className="overflow-y-auto max-h-[70vh]">{loadingHistory ? <p className="text-center py-10">Memuat histori...</p> : (historyData && historyData.length > 0 ? (<table className="min-w-full"><thead className="bg-slate-100 sticky top-0"><tr><th className="px-6 py-3 text-left text-xs font-semibold uppercase">Tanggal</th><th className="px-6 py-3 text-left text-xs font-semibold uppercase">Balai</th><th className="px-6 py-3 text-left text-xs font-semibold uppercase">Wilayah</th><th className="px-6 py-3 text-left text-xs font-semibold uppercase">Paket Pekerjaan</th></tr></thead><tbody className="divide-y divide-gray-200">{historyData.map((log) => (<tr key={log.id}><td className="px-6 py-4 text-sm whitespace-nowrap">{log.tanggal}</td><td className="px-6 py-4 text-sm whitespace-nowrap">{log.balai}</td><td className="px-6 py-4 text-sm whitespace-nowrap">{log.wilayah}</td><td className="px-6 py-4 text-sm">{log.paket_pekerjaan}</td></tr>))}</tbody></table>) : (<p className="text-center text-gray-500 py-10">Tidak ada data histori.</p>))}</div></div></div> )}
     </>
   );
