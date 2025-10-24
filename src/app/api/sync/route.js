@@ -36,7 +36,8 @@ export async function POST(request) {
         row['provinsi'] || null,
         row['kategori_1'] || null,
         row['kategori_2'] || null,
-        row['last_update'] || null
+        row['last_update'] || null,
+		row['kota'] || null,
       );
     });
 
