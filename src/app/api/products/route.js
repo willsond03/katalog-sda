@@ -35,7 +35,10 @@ export async function GET(request) {
     const { results: countResult } = await countStmt.all();
     const totalItems = countResult[0].total;
 
-    const dataQuery = `SELECT id, nama_produk, perusahaan, provinsi ${baseQuery} ORDER BY id LIMIT ? OFFSET ?`;
+    // --- PERUBAHAN DI SINI ---
+    // Menambahkan 'kota' dan 'product_link' ke query SELECT
+    const dataQuery = `SELECT id, nama_produk, perusahaan, provinsi, kota, product_link ${baseQuery} ORDER BY id LIMIT ? OFFSET ?`;
+    
     const dataStmt = db.prepare(dataQuery).bind(...queryParams, itemsPerPage, offset);
     const { results: items } = await dataStmt.all();
 

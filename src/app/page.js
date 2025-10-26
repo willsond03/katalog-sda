@@ -51,9 +51,9 @@ export default function DashboardPage() {
           setError(null);
           setLoading(prev => ({ ...prev, options: true, products: true }));
           try {
-            const [optionsData, mapJsonData] = await Promise.all([ fetchApiData('filter-options', {}), fetchApiData('map-data', {})]);
+            const [optionsData, mapData] = await Promise.all([ fetchApiData('filter-options', {}), fetchApiData('map-data', {})]);
             setFilterOptions(optionsData);
-            setMapData(mapJsonData);
+            setMapData(mapData);
           } catch (error) { setError(error.message); } 
           finally { setLoading(prev => ({ ...prev, options: false })); }
         };
@@ -120,7 +120,7 @@ export default function DashboardPage() {
             <div className="h-16 lg:hidden" />
 
             <header>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Dashboard Analitik Produk</h1>
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Dashboard Analitik Produk</h1>
             </header>
             
             <FilterBreadcrumb
@@ -135,14 +135,16 @@ export default function DashboardPage() {
                 isLoading={loading.options}
             />
 
-            <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 h-[65vh] flex flex-col">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex-shrink-0">Persebaran Produk</h2>
-                <div className="flex-grow min-h-0">
+            <div className="bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col">
+                <div className="p-6">
+                    <h2 className="text-lg font-semibold text-gray-900">Persebaran Produk</h2>
+                </div>
+                <div className="h-[60vh] px-2 pb-2">
                     {loading.options ? <div className="flex items-center justify-center h-full text-gray-500"><p>Memuat data peta...</p></div> : <Map mapData={mapData} />}
                 </div>
             </div>
             
-            <div id="table-container" className="bg-white border border-gray-200 rounded-lg shadow-sm">
+            <div id="table-container" className="bg-white border border-slate-200 rounded-xl shadow-sm">
                 <div className="p-6">
                     <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-2">
                         <h2 className="text-lg font-semibold text-gray-900">Detail Produk</h2>
@@ -150,11 +152,31 @@ export default function DashboardPage() {
                     </div>
                     <div className="overflow-x-auto">
                         <table className="min-w-full">
-                            <thead className="bg-gray-50"><tr className="border-b border-gray-200"><th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama Produk</th><th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Perusahaan</th><th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Provinsi</th></tr></thead>
+                            {/* --- PERUBAHAN DI THEAD (Total 4 Kolom) --- */}
+                            <thead className="bg-slate-50"><tr className="border-b border-gray-200">
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama Produk</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Perusahaan</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Kota</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Provinsi</th>
+                            </tr></thead>
+                            
+                            {/* --- PERUBAHAN DI TBODY (Hyperlink & Kolom Baru) --- */}
                             <tbody className="divide-y divide-gray-200">
-                                {loading.products ? <tr><td colSpan="3" className="text-center py-10 text-gray-500">Memuat data produk...</td></tr> : 
-                                error ? <tr><td colSpan="3" className="text-center py-10 text-red-500">Error: {error}</td></tr> :
-                                (products.length > 0 ? products.map(p => (<tr key={p.id} className="hover:bg-gray-50"><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{p.nama_produk}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.perusahaan}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.provinsi}</td></tr>)) : (<tr><td colSpan="3" className="text-center py-10 text-gray-500">Tidak ada data yang cocok dengan filter Anda.</td></tr>))}
+                                {loading.products ? <tr><td colSpan="4" className="text-center py-10 text-gray-500">Memuat data produk...</td></tr> : 
+                                error ? <tr><td colSpan="4" className="text-center py-10 text-red-500">Error: {error}</td></tr> :
+                                (products.length > 0 ? products.map(p => (
+                                    <tr key={p.id} className="hover:bg-gray-50">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                                            {/* Nama Produk sekarang menjadi link */}
+                                            <a href={p.product_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                                {p.nama_produk}
+                                            </a>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.perusahaan}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.kota}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.provinsi}</td>
+                                    </tr>
+                                )) : (<tr><td colSpan="4" className="text-center py-10 text-gray-500">Tidak ada data yang cocok dengan filter Anda.</td></tr>))}
                             </tbody>
                         </table>
                     </div>
