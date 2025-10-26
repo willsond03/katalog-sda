@@ -27,7 +27,7 @@ export async function POST(request) {
     await db.prepare("DELETE FROM sqlite_sequence WHERE name = 'produk'").run();
     // --- ------------------------------- ---
 
-    const stmt = db.prepare("INSERT INTO produk (nama_produk, perusahaan, provinsi, kategori_1, kategori_2, last_update, kota) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    const stmt = db.prepare("INSERT INTO produk (nama_produk, perusahaan, provinsi, kategori_1, kategori_2, last_update, kota, product_link) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
     
     const batch = dataToSync.map(row => {
       return stmt.bind(
@@ -38,6 +38,7 @@ export async function POST(request) {
         row['kategori_2'] || null,
         row['last_update'] || null,
 		row['kota'] || null,
+		row['product_link'] || null,
       );
     });
 
