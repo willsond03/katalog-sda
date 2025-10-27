@@ -2,6 +2,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image'; // Gunakan next/image untuk optimasi
 import { usePathname } from 'next/navigation';
 
 // Komponen terpisah untuk link agar bisa digunakan di desktop & mobile
@@ -38,9 +39,21 @@ export default function Sidebar() {
   // Bagian utama sidebar yang akan ditampilkan
   const sidebarContent = (
     <>
-      <div className="p-4 border-b border-gray-200">
-        <h1 className="text-xl font-bold text-gray-800">E-Katalog SDA</h1>
-        <p className="text-xs text-gray-500">Dashboard Monitoring</p>
+      {/* --- PERUBAHAN DI SINI (Sidebar Desktop) --- */}
+      <div className="p-4 border-b border-gray-200 flex items-center space-x-3">
+        {/* Logo */}
+        <Image 
+          src="/logo.png" // Pastikan logo ada di folder /public
+          alt="Logo E-Katalog SDA"
+          width={40} // Sesuaikan ukuran
+          height={40}
+          className="rounded-md"
+        />
+        {/* Blok Teks */}
+        <div>
+          <h1 className="text-xl font-bold text-gray-800">E-Katalog SDA</h1>
+          <p className="text-xs text-gray-500">Dashboard Monitoring</p>
+        </div>
       </div>
       <NavLinks onItemClick={() => setMobileMenuOpen(false)} />
     </>
@@ -53,9 +66,21 @@ export default function Sidebar() {
         {sidebarContent}
       </aside>
 
-      {/* Tombol Hamburger di Header Mobile */}
+      {/* --- PERUBAHAN DI SINI (Header Mobile) --- */}
       <div className="lg:hidden w-full absolute top-0 left-0 p-4 bg-white/80 backdrop-blur-sm border-b border-gray-200 flex justify-between items-center z-30">
-        <h1 className="text-lg font-bold">E-Katalog SDA</h1>
+        {/* Logo dan Teks di Kiri */}
+        <div className="flex items-center space-x-2">
+          <Image 
+            src="/logo.png" // Pastikan logo ada di folder /public
+            alt="Logo E-Katalog SDA"
+            width={32} // Ukuran mobile lebih kecil
+            height={32}
+            className="rounded-md"
+          />
+          <h1 className="text-lg font-bold">E-Katalog SDA</h1>
+        </div>
+        
+        {/* Tombol Hamburger di Kanan */}
         <button onClick={() => setMobileMenuOpen(true)}>
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" /></svg>
         </button>
