@@ -1,8 +1,9 @@
 // Lokasi: src/app/layout.js
 import { Inter } from "next/font/google";
 import "./globals.css";
-import "leaflet/dist/leaflet.css"; // <-- TAMBAHKAN IMPORT CSS LEAFLET DI SINI
-import Sidebar from "../components/Sidebar"; // <-- 1. Impor komponen Sidebar
+import "leaflet/dist/leaflet.css"; 
+import Sidebar from "../components/Sidebar";
+import Footer from "../components/Footer"; // <-- 1. IMPORT FOOTER
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -15,11 +16,23 @@ export default function RootLayout({ children }) {
   return (
     <html lang="id">
       <body className={inter.className}>
-		<div className="flex h-screen">
-          <Sidebar /> {/* <-- 3. Tampilkan Sidebar di sini */}
-          <main className="flex-1 overflow-y-auto">
-            {children} {/* {children} adalah halaman Anda (Dashboard atau Market Sounding) */}
-          </main>
+        {/* Latar belakang abu-abu diterapkan di sini */}
+		<div className="flex h-screen bg-gray-100">
+          <Sidebar /> 
+          
+          {/* --- 2. PERUBAHAN STRUKTUR --- */}
+          {/* Wrapper baru untuk main content + footer */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            
+            {/* Area konten yang bisa di-scroll */}
+            <main className="flex-1 overflow-x-hidden overflow-y-auto">
+              {children}
+            </main>
+            
+            {/* --- 3. FOOTER DITAMBAHKAN DI SINI --- */}
+            <Footer />
+
+          </div>
         </div>
 	  </body>
     </html>
