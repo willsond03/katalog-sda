@@ -234,11 +234,11 @@ export default function DashboardPage() {
                     {/* Kolom Kiri: Peta */}
                     <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col">
                         
-                        {/* Header Kartu Peta (Request 1) */}
+                        {/* Header Kartu Peta */}
                         <div className="p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-2 bg-gradient-to-br from-blue-50 to-slate-100 rounded-t-xl border-b border-slate-200">
                             <h2 className="text-lg font-semibold text-gray-900">Persebaran Produk</h2>
                             
-                            {/* Toggle Skala Peta (Request 3) */}
+                            {/* Toggle Skala Peta */}
                             <div className="flex items-center space-x-2">
                                 <label htmlFor="mapView" className="text-sm font-medium text-gray-700">Skala:</label>
                                 <select 
@@ -254,7 +254,8 @@ export default function DashboardPage() {
                         </div>
 
                         {/* Konten Peta */}
-                        <div className="h-[50vh] px-2 pb-2">
+                        {/* --- PERBAIKAN SPACING DI SINI --- */}
+                        <div className="h-[50vh] p-2">
                             {loading.map ? <div className="flex items-center justify-center h-full text-gray-500"><p>Memuat data peta...</p></div> : <Map mapData={mapData} view={mapView} />}
                         </div>
                     </div>
