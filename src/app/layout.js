@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import "leaflet/dist/leaflet.css"; 
 import Sidebar from "../components/Sidebar";
-import Footer from "../components/Footer"; // <-- 1. IMPORT FOOTER
+import Footer from "../components/Footer"; // Impor Footer
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -16,12 +16,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="id">
       <body className={inter.className}>
-        {/* Latar belakang abu-abu diterapkan di sini */}
-		<div className="flex h-screen bg-gray-100">
+        {/* Latar belakang abu-abu dihapus dari sini */}
+		<div className="flex h-screen">
           <Sidebar /> 
           
-          {/* --- 2. PERUBAHAN STRUKTUR --- */}
-          {/* Wrapper baru untuk main content + footer */}
+          {/* Wrapper untuk main content + footer */}
           <div className="flex-1 flex flex-col overflow-hidden">
             
             {/* Area konten yang bisa di-scroll */}
@@ -29,7 +28,7 @@ export default function RootLayout({ children }) {
               {children}
             </main>
             
-            {/* --- 3. FOOTER DITAMBAHKAN DI SINI --- */}
+            {/* Footer */}
             <Footer />
 
           </div>
