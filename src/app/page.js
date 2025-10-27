@@ -152,11 +152,19 @@ export default function DashboardPage() {
                 </header>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <StatCard title="Total Product" value={loading.stats ? '...' : (stats?.total_produk.toLocaleString('id-ID') || '0')}>
+                    <StatCard 
+                        title="Total Product" 
+                        value={loading.stats ? '...' : (stats?.total_produk.toLocaleString('id-ID') || '0')}
+                        className="bg-gradient-to-br from-blue-50 to-slate-100" // Gradasi Biru
+                    >
                         <span className="text-gray-500">Last update: {loading.stats ? '...' : (stats?.last_update || 'N/A')}</span>
                     </StatCard>
                     
-                    <StatCard title="Kategori 1" value={loading.stats ? '...' : (stats?.total_k1.toLocaleString('id-ID') || '0')}>
+                    <StatCard 
+                        title="Kategori 1" 
+                        value={loading.stats ? '...' : (stats?.total_k1.toLocaleString('id-ID') || '0')}
+                        className="bg-gradient-to-br from-red-50 to-orange-100" // Gradasi Pink/Peach
+                    >
                         <button 
                             onClick={() => handleOpenModal('Kategori 1', filterOptions.kategori_1)}
                             disabled={loading.options}
@@ -166,7 +174,11 @@ export default function DashboardPage() {
                         </button>
                     </StatCard>
                     
-                    <StatCard title="Kategori 2" value={loading.stats ? '...' : (stats?.total_k2.toLocaleString('id-ID') || '0')}>
+                    <StatCard 
+                        title="Kategori 2" 
+                        value={loading.stats ? '...' : (stats?.total_k2.toLocaleString('id-ID') || '0')}
+                        className="bg-gradient-to-br from-purple-50 to-indigo-100" // Gradasi Ungu
+                    >
                          <button 
                             onClick={() => handleOpenModal('Kategori 2', filterOptions.kategori_2)}
                             disabled={loading.options}
@@ -176,7 +188,11 @@ export default function DashboardPage() {
                         </button>
                     </StatCard>
                     
-                    <StatCard title="Histori Market Sounding" value={loading.stats ? '...' : (stats?.total_history.toLocaleString('id-ID') || '0')}>
+                    <StatCard 
+                        title="Histori Market Sounding" 
+                        value={loading.stats ? '...' : (stats?.total_history.toLocaleString('id-ID') || '0')}
+                        className="bg-gradient-to-br from-green-50 to-emerald-100" // Gradasi Hijau
+                    >
                         <Link href="/market-sounding" className="font-medium text-blue-600 hover:text-blue-500">
                             Klik lebih lanjut
                         </Link>
