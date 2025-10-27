@@ -2,7 +2,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 
-// --- HELPER BARU: Memberi warna pada angka perubahan ---
+// Helper untuk memberi warna pada angka perubahan
 const formatChange = (value) => {
   if (typeof value !== 'number') return <span className="text-red-500 font-medium text-xs">{value}</span>;
   if (value > 0) return <span className="text-green-600 font-medium">+{value}</span>;
@@ -14,14 +14,13 @@ export default function HistoryMarketSoundingPage() {
   const [historyData, setHistoryData] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [deleteStatus, setDeleteStatus] = useState({ loading: false, error: null });
-
-  // --- STATE BARU: Untuk menyimpan hasil kalkulasi per baris ---
-  const [changes, setChanges] = useState({}); // Contoh: { "log-id-1": { loading: false, value: 10 } }
+  const [changes, setChanges] = useState({}); 
 
   useEffect(() => {
     const fetchHistory = async () => {
       setLoadingHistory(true);
       try {
+        // --- PERBAIKAN: Ambil SEMUA kolom, termasuk ID ---
         const response = await fetch(`/api/market-sounding?t=${new Date().getTime()}`);
         if (!response.ok) throw new Error('Gagal mengambil data');
         const data = await response.json();
@@ -32,24 +31,26 @@ export default function HistoryMarketSoundingPage() {
     fetchHistory();
   }, []);
 
-  // --- FUNGSI BARU: Untuk kalkulasi H+7 ---
-  const handleCalculateChange = async (logId, eventDate, provinsi) => {
+  // --- FUNGSI DIPERBAIKI: Mengirim parameter yang benar ---
+  const handleCalculateChange = async (logId) => {
     // Set loading state untuk baris ini
     setChanges(prev => ({ ...prev, [logId]: { loading: true, value: null } }));
 
     try {
-      const response = await fetch('/api/run-comparison', { // Memanggil API yang ada
+      const response = await fetch('/api/run-comparison', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          eventDate: eventDate, 
-          provinsi: provinsi, // 'wilayah' dari log adalah 'provinsi' untuk API ini
-          daysToAdd: 7 // Sesuai permintaan H+7
+          // --- INI PERBAIKANNYA ---
+          // Kita hanya perlu mengirim eventId, API akan mencari sisanya
+          eventId: logId,
+          daysToAdd: 7 
         })
       });
       
       if (!response.ok) {
         const err = await response.json();
+        // Berikan pesan error yang lebih spesifik jika ada
         throw new Error(err.error || 'Gagal menghitung');
       }
 
@@ -60,7 +61,8 @@ export default function HistoryMarketSoundingPage() {
 
     } catch (error) {
       console.error("Gagal kalkulasi:", error);
-      setChanges(prev => ({ ...prev, [logId]: { loading: false, value: 'Error' } }));
+      // Tampilkan error di UI
+      setChanges(prev => ({ ...prev, [logId]: { loading: false, value: error.message } }));
     }
   };
 
@@ -111,7 +113,6 @@ export default function HistoryMarketSoundingPage() {
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Balai</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Wilayah</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Paket Pekerjaan</th>
-                  {/* --- 1. KOLOM BARU --- */}
                   <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Perubahan Produk (H+7)</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
                 </tr>
@@ -119,7 +120,6 @@ export default function HistoryMarketSoundingPage() {
               <tbody className="divide-y divide-gray-200">
                 {historyData && historyData.length > 0 ? (
                   historyData.map((log) => {
-                    // Cek state untuk baris ini
                     const changeData = changes[log.id]; 
                     return (
                       <tr key={log.id} className="hover:bg-gray-50">
@@ -128,15 +128,15 @@ export default function HistoryMarketSoundingPage() {
                         <td className="px-6 py-4 text-sm whitespace-nowrap">{log.wilayah}</td>
                         <td className="px-6 py-4 text-sm">{log.paket_pekerjaan}</td>
                         
-                        {/* --- 2. SEL BARU UNTUK KALKULASI --- */}
                         <td className="px-6 py-4 text-sm text-center align-middle">
                           {changeData?.loading ? (
                             <span className="text-gray-500 text-xs italic">Menghitung...</span>
                           ) : changeData?.value != null ? (
                             formatChange(changeData.value)
                           ) : (
+                            // --- TOMBOL DIPERBAIKI ---
                             <button
-                              onClick={() => handleCalculateChange(log.id, log.tanggal, log.wilayah)}
+                              onClick={() => handleCalculateChange(log.id)}
                               className="text-blue-600 hover:text-blue-800 text-xs font-medium"
                             >
                               Hitung
@@ -158,7 +158,6 @@ export default function HistoryMarketSoundingPage() {
                   })
                 ) : (
                   <tr>
-                    {/* --- 3. Colspan diubah menjadi 6 --- */}
                     <td colSpan="6" className="text-center text-gray-500 py-10">
                       Tidak ada data histori.
                     </td>
