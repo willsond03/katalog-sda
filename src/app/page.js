@@ -31,15 +31,17 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
 
 export default function DashboardPage() {
     const [products, setProducts] = useState([]);
-    const [mapData, setMapData] = useState({});
-    const [loading, setLoading] = useState({ options: true, products: true, stats: true });
+    const [mapData, setMapData] = useState({}); // Diinisialisasi sebagai objek
+    const [loading, setLoading] = useState({ options: true, products: true, stats: true, map: true });
     const [error, setError] = useState(null);
     const [filterOptions, setFilterOptions] = useState({ provinsi: [], kategori_1: [], kategori_2: [] });
     const [filters, setFilters] = useState({ provinsi: 'all', kategori_1: 'all', kategori_2: 'all' });
     const [pagination, setPagination] = useState({ page: 1, totalPages: 1, totalItems: 0 });
-
     const [stats, setStats] = useState(null);
     const [modal, setModal] = useState({ isOpen: false, title: '', data: [] });
+
+    // State baru untuk skala peta
+    const [mapView, setMapView] = useState('provinsi');
 
     const fetchApiData = useCallback(async (endpoint, paramsObj = {}) => {
         const cleanedParams = Object.fromEntries(Object.entries(paramsObj).filter(([_, v]) => v != null));
@@ -52,6 +54,7 @@ export default function DashboardPage() {
         return response.json();
     }, []);
 
+    // useEffect untuk Statistik (KPI Cards)
     useEffect(() => {
         const fetchStats = async () => {
             setLoading(prev => ({ ...prev, stats: true }));
@@ -67,20 +70,21 @@ export default function DashboardPage() {
         fetchStats();
     }, [fetchApiData]);
 
+    // useEffect untuk Opsi Filter (Dropdown)
     useEffect(() => {
-        const fetchInitialData = async () => {
+        const fetchFilterOptions = async () => {
           setError(null);
-          setLoading(prev => ({ ...prev, options: true, products: true }));
+          setLoading(prev => ({ ...prev, options: true }));
           try {
-            const [optionsData, mapData] = await Promise.all([ fetchApiData('filter-options', {}), fetchApiData('map-data', {})]);
+            const optionsData = await fetchApiData('filter-options', {});
             setFilterOptions(optionsData);
-            setMapData(mapData);
           } catch (error) { setError(error.message); } 
           finally { setLoading(prev => ({ ...prev, options: false })); }
         };
-        fetchInitialData();
+        fetchFilterOptions();
     }, [fetchApiData]);
 
+    // useEffect untuk Opsi Filter Bertingkat (saat filter berubah)
     useEffect(() => {
         const updateFilterOptions = async () => {
            setLoading(prev => ({ ...prev, options: true }));
@@ -93,6 +97,7 @@ export default function DashboardPage() {
         updateFilterOptions();
     }, [filters.provinsi, filters.kategori_1, fetchApiData]);
 
+    // useEffect untuk Data Tabel (saat filter atau halaman berubah)
     useEffect(() => {
         const updateProducts = async () => {
           setLoading(prev => ({...prev, products: true}));
@@ -113,6 +118,21 @@ export default function DashboardPage() {
         return () => clearTimeout(debounceTimeout);
     }, [filters, pagination.page, fetchApiData]);
 
+    // useEffect baru untuk Data Peta (saat filter atau skala peta berubah)
+    useEffect(() => {
+        const updateMapData = async () => {
+          setLoading(prev => ({ ...prev, map: true }));
+          try {
+            const mapParams = { ...filters, view: mapView };
+            const newMapData = await fetchApiData('map-data', mapParams);
+            setMapData(newMapData);
+          } catch (e) { setError(e.message); } 
+          finally { setLoading(prev => ({ ...prev, map: false })); }
+        };
+        updateMapData();
+    }, [filters, mapView, fetchApiData]); // <-- Dependensi ke filter & mapView
+
+    // Handler untuk mengubah filter
     const handleFilterChange = (name, value) => {
         setFilters(prevFilters => {
           const newFilters = { ...prevFilters, [name]: value };
@@ -128,6 +148,7 @@ export default function DashboardPage() {
         setPagination(prev => ({ ...prev, page: 1 }));
     };
 
+    // Handler untuk pindah halaman tabel
     const handlePageChange = (newPage) => {
         if (newPage >= 1 && newPage <= pagination.totalPages) {
             setPagination(prev => ({ ...prev, page: newPage }));
@@ -136,6 +157,7 @@ export default function DashboardPage() {
         }
     };
 
+    // Handler untuk modal KPI
     const handleOpenModal = (title, data) => {
         setModal({ isOpen: true, title, data });
     };
@@ -151,6 +173,7 @@ export default function DashboardPage() {
                     <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Dashboard Analitik Produk</h1>
                 </header>
                 
+                {/* Blok KPI Card */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <StatCard 
                         title="Total Product" 
@@ -193,29 +216,50 @@ export default function DashboardPage() {
                         value={loading.stats ? '...' : (stats?.total_history.toLocaleString('id-ID') || '0')}
                         className="bg-gradient-to-br from-green-50 to-emerald-100"
                     >
-                        {/* Link diubah ke '/market-sounding/history' */}
                         <Link href="/market-sounding/history" className="font-medium text-blue-600 hover:text-blue-500">
                             Klik lebih lanjut
                         </Link>
                     </StatCard>
                 </div>
 
+                {/* Blok Breadcrumb Filter Aktif */}
                 <FilterBreadcrumb
                     filters={filters}
                     onClear={handleFilterChange}
                 />
                 
+                {/* Blok Grid Peta dan Filter */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     
+                    {/* Kolom Kiri: Peta */}
                     <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col">
-                        <div className="p-6">
+                        
+                        {/* Header Kartu Peta (Request 1) */}
+                        <div className="p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-2 bg-gradient-to-br from-blue-50 to-slate-100 rounded-t-xl border-b border-slate-200">
                             <h2 className="text-lg font-semibold text-gray-900">Persebaran Produk</h2>
+                            
+                            {/* Toggle Skala Peta (Request 3) */}
+                            <div className="flex items-center space-x-2">
+                                <label htmlFor="mapView" className="text-sm font-medium text-gray-700">Skala:</label>
+                                <select 
+                                  id="mapView"
+                                  value={mapView}
+                                  onChange={(e) => setMapView(e.target.value)}
+                                  className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm py-1"
+                                >
+                                    <option value="provinsi">Provinsi</option>
+                                    <option value="kota">Kab/Kota</option>
+                                </select>
+                            </div>
                         </div>
+
+                        {/* Konten Peta */}
                         <div className="h-[50vh] px-2 pb-2">
-                            {loading.options ? <div className="flex items-center justify-center h-full text-gray-500"><p>Memuat data peta...</p></div> : <Map mapData={mapData} />}
+                            {loading.map ? <div className="flex items-center justify-center h-full text-gray-500"><p>Memuat data peta...</p></div> : <Map mapData={mapData} view={mapView} />}
                         </div>
                     </div>
 
+                    {/* Kolom Kanan: Filter */}
                     <div className="lg:col-span-1">
                         <FilterPanel 
                             filterOptions={filterOptions}
@@ -227,6 +271,7 @@ export default function DashboardPage() {
                     </div>
                 </div>
                 
+                {/* Blok Tabel Detail Produk */}
                 <div id="table-container" className="bg-white border border-slate-200 rounded-xl shadow-sm">
                     <div className="p-6">
                         <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-2">
@@ -265,6 +310,7 @@ export default function DashboardPage() {
                 </div>
             </div>
 
+            {/* Modal untuk KPI */}
             <CategoryModal
                 isOpen={modal.isOpen}
                 onClose={handleCloseModal}
