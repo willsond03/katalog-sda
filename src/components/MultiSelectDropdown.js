@@ -17,7 +17,8 @@ const ChevronUpDownIcon = () => (
   </svg>
 );
 
-export default function MultiSelectDropdown({ label, options, selectedValues, onChange, placeholder }) {
+// --- 1. Terima prop 'disabled' ---
+export default function MultiSelectDropdown({ label, options, selectedValues, onChange, placeholder, disabled = false }) {
   
   const getDisplayValue = () => {
     if (selectedValues.length === 0) return placeholder || `Pilih ${label}...`;
@@ -27,10 +28,15 @@ export default function MultiSelectDropdown({ label, options, selectedValues, on
 
   return (
     <div>
-      <Listbox value={selectedValues} onChange={onChange} multiple>
+      {/* --- 2. Berikan 'disabled' ke Listbox --- */}
+      <Listbox value={selectedValues} onChange={onChange} multiple disabled={disabled}>
         <Listbox.Label className="block text-sm font-medium text-gray-700">{label}</Listbox.Label>
         <div className="relative mt-1">
-          <Listbox.Button className="relative w-full cursor-default rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-left shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm">
+          <Listbox.Button 
+            // --- 3. Tambahkan style untuk 'disabled' ---
+            className="relative w-full cursor-default rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-left shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm
+                       disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+          >
             <span className="block truncate">{getDisplayValue()}</span>
             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2"><ChevronUpDownIcon /></span>
           </Listbox.Button>

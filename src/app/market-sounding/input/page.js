@@ -97,15 +97,13 @@ export default function InputMarketSoundingPage() {
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Input Market Sounding</h1>
       </header>
 
-      {/* REVISI 1: Kontainer utama dibuat lebih lebar */}
       <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 lg:p-8 max-w-6xl mx-auto">
         <form onSubmit={handleMarketSoundingSubmit}>
-          {/* REVISI 2: Grid 2 kolom */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
             {/* Kolom Kiri: Mandatory */}
+            {/* REVISI 2: Teks "Parameter Mandatory" dihapus dari sini */}
             <div className="space-y-4 p-6 rounded-xl shadow-sm bg-gradient-to-br from-blue-50 to-slate-100">
-              <div className="text-lg font-semibold text-gray-900 mb-2">Parameter Mandatory</div>
               <div>
                 <label htmlFor="balai" className="block text-sm font-medium text-gray-700">Balai</label>
                 <input type="text" id="balai" name="balai" required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"/>
@@ -132,20 +130,22 @@ export default function InputMarketSoundingPage() {
             {/* Kolom Kanan: Opsional */}
             <div className="space-y-4 p-6 rounded-xl shadow-sm bg-gradient-to-br from-red-50 to-orange-100">
               <div className="text-lg font-semibold text-gray-900 mb-2">Parameter Opsional</div>
+              {/* REVISI 3: Label diubah */}
               <MultiSelectDropdown
-                label="Kategori 1 (Opsional)"
+                label="Kategori 1"
                 options={allFilterOptions.kategori_1}
                 selectedValues={selectedK1}
                 onChange={setSelectedK1}
                 placeholder="Pilih Kategori 1..."
               />
+              {/* REVISI 3: Label diubah */}
               <MultiSelectDropdown
-                label="Kategori 2 (Opsional)"
+                label="Kategori 2"
                 options={k2Options} 
                 selectedValues={selectedK2}
                 onChange={setSelectedK2}
                 placeholder={loadingK2 ? "Memuat..." : (selectedK1.length === 0 ? "Pilih Kategori 1 dahulu" : "Pilih Kategori 2...")}
-                disabled={loadingK2 || selectedK1.length === 0}
+                disabled={loadingK2 || selectedK1.length === 0} // Properti ini sekarang akan berfungsi
               />
             </div>
           </div>
