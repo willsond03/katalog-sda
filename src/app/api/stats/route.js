@@ -7,7 +7,7 @@ export async function GET(request) {
 
     // PENTING: Ganti 'tanggal_diupdate' dengan nama kolom timestamp 
     // terakhir di tabel 'produk' Anda.
-    const lastUpdateQuery = "SELECT MAX(tanggal_diupdate) as last_update FROM produk";
+    const lastUpdateQuery = "SELECT MAX(last_update) as last_update FROM produk";
 
     // Jalankan semua query statistik secara paralel
     const [
@@ -21,7 +21,7 @@ export async function GET(request) {
       db.prepare(lastUpdateQuery),
       db.prepare("SELECT COUNT(DISTINCT kategori_1) as total FROM produk"),
       db.prepare("SELECT COUNT(DISTINCT kategori_2) as total FROM produk"),
-      db.prepare("SELECT COUNT(*) as total FROM market_sounding") // Pastikan nama tabel ini benar
+      db.prepare("SELECT COUNT(*) as total FROM market_sounding_logs") // Pastikan nama tabel ini benar
     ]);
 
     const stats = {
