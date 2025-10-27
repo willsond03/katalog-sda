@@ -5,50 +5,41 @@ import SearchableSelect from '../../../components/SearchableSelect';
 import MultiSelectDropdown from '../../../components/MultiSelectDropdown';
 
 export default function InputMarketSoundingPage() {
-  // Opsi filter master (hanya Provinsi & K1)
   const [allFilterOptions, setAllFilterOptions] = useState({ provinsi: [], kategori_1: [] });
-  // Opsi K2 yang sudah difilter
   const [k2Options, setK2Options] = useState([]); 
-  
   const [selectedProvinsi, setSelectedProvinsi] = useState('');
   const [selectedK1, setSelectedK1] = useState([]);
   const [selectedK2, setSelectedK2] = useState([]);
   const [status, setStatus] = useState({ loading: false, message: '', isError: false });
   const [loadingK2, setLoadingK2] = useState(false);
 
-  // Ambil opsi filter utama (Provinsi & K1)
   useEffect(() => {
     const fetchOptions = async () => {
       try {
         const optionsRes = await fetch('/api/filter-options'); 
         const optionsData = await optionsRes.json();
-        
         setAllFilterOptions({
           provinsi: optionsData.provinsi,
           kategori_1: optionsData.kategori_1
         });
-        
         if (optionsData.provinsi.length > 0) {
             setSelectedProvinsi(optionsData.provinsi[0]);
         }
       } catch (error) { console.error("Gagal memuat opsi:", error); }
     };
     fetchOptions();
-  }, []); // Hanya berjalan sekali
+  }, []); 
 
-  // panggil API BARU (k2-options) saat 'selectedK1' berubah
   useEffect(() => {
     const updateK2Options = async () => {
       if (selectedK1.length === 0) {
-        setK2Options([]); // Kosongkan K2 jika tidak ada K1
+        setK2Options([]); 
         setSelectedK2([]);
         return;
       }
-
       setLoadingK2(true);
       const params = new URLSearchParams();
       selectedK1.forEach(k1 => params.append('kategori_1', k1));
-      
       try {
         const optionsRes = await fetch(`/api/k2-options?${params.toString()}`);
         const optionsData = await optionsRes.json();
@@ -60,7 +51,6 @@ export default function InputMarketSoundingPage() {
       }
       setSelectedK2([]);
     };
-
     updateK2Options();
   }, [selectedK1]); 
 
@@ -107,61 +97,61 @@ export default function InputMarketSoundingPage() {
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Input Market Sounding</h1>
       </header>
 
-      {/* Layout max-w-4xl dipertahankan */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 lg:p-8 max-w-4xl mx-auto">
-        <form onSubmit={handleMarketSoundingSubmit} className="space-y-6">
-          
-          {/* --- PERBAIKAN VISUAL 1 --- */}
-          {/* Mengganti <fieldset> dengan <div> */}
-          <div className="space-y-4 p-4 border rounded-lg">
-            {/* Mengganti <legend> dengan <div> */}
-            <div className="text-lg font-semibold text-gray-900 mb-2">Parameter Mandatory</div>
-            <div>
-              <label htmlFor="balai" className="block text-sm font-medium text-gray-700">Balai</label>
-              <input type="text" id="balai" name="balai" required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"/>
+      {/* REVISI 1: Kontainer utama dibuat lebih lebar */}
+      <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 lg:p-8 max-w-6xl mx-auto">
+        <form onSubmit={handleMarketSoundingSubmit}>
+          {/* REVISI 2: Grid 2 kolom */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            {/* Kolom Kiri: Mandatory */}
+            <div className="space-y-4 p-6 rounded-xl shadow-sm bg-gradient-to-br from-blue-50 to-slate-100">
+              <div className="text-lg font-semibold text-gray-900 mb-2">Parameter Mandatory</div>
+              <div>
+                <label htmlFor="balai" className="block text-sm font-medium text-gray-700">Balai</label>
+                <input type="text" id="balai" name="balai" required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"/>
+              </div>
+              <div>
+                <SearchableSelect
+                    label="Wilayah (Provinsi)"
+                    options={provinsiOptionsForSelect}
+                    selectedValue={selectedProvinsi}
+                    onChange={setSelectedProvinsi}
+                    placeholder="Cari Wilayah..."
+                />
+              </div>
+              <div>
+                <label htmlFor="paket_pekerjaan" className="block text-sm font-medium text-gray-700">Paket Pekerjaan</label>
+                <input type="text" id="paket_pekerjaan" name="paket_pekerjaan" required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"/>
+              </div>
+              <div>
+                <label htmlFor="tanggal" className="block text-sm font-medium text-gray-700">Tanggal</label>
+                <input type="date" id="tanggal" name="tanggal" required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"/>
+              </div>
             </div>
-            <div>
-              <SearchableSelect
-                  label="Wilayah (Provinsi)"
-                  options={provinsiOptionsForSelect}
-                  selectedValue={selectedProvinsi}
-                  onChange={setSelectedProvinsi}
-                  placeholder="Cari Wilayah..."
+            
+            {/* Kolom Kanan: Opsional */}
+            <div className="space-y-4 p-6 rounded-xl shadow-sm bg-gradient-to-br from-red-50 to-orange-100">
+              <div className="text-lg font-semibold text-gray-900 mb-2">Parameter Opsional</div>
+              <MultiSelectDropdown
+                label="Kategori 1 (Opsional)"
+                options={allFilterOptions.kategori_1}
+                selectedValues={selectedK1}
+                onChange={setSelectedK1}
+                placeholder="Pilih Kategori 1..."
+              />
+              <MultiSelectDropdown
+                label="Kategori 2 (Opsional)"
+                options={k2Options} 
+                selectedValues={selectedK2}
+                onChange={setSelectedK2}
+                placeholder={loadingK2 ? "Memuat..." : (selectedK1.length === 0 ? "Pilih Kategori 1 dahulu" : "Pilih Kategori 2...")}
+                disabled={loadingK2 || selectedK1.length === 0}
               />
             </div>
-            <div>
-              <label htmlFor="paket_pekerjaan" className="block text-sm font-medium text-gray-700">Paket Pekerjaan</label>
-              <input type="text" id="paket_pekerjaan" name="paket_pekerjaan" required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"/>
-            </div>
-            <div>
-              <label htmlFor="tanggal" className="block text-sm font-medium text-gray-700">Tanggal</label>
-              <input type="date" id="tanggal" name="tanggal" required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"/>
-            </div>
           </div>
           
-          {/* --- PERBAIKAN VISUAL 2 --- */}
-          {/* Mengganti <fieldset> dengan <div> */}
-          <div className="space-y-4 p-4 rounded-lg bg-gradient-to-br from-red-50 to-orange-100">
-            {/* Mengganti <legend> dengan <div> */}
-            <div className="text-lg font-semibold text-gray-900 mb-2">Parameter Opsional</div>
-            <MultiSelectDropdown
-              label="Kategori 1 (Opsional)"
-              options={allFilterOptions.kategori_1}
-              selectedValues={selectedK1}
-              onChange={setSelectedK1}
-              placeholder="Pilih Kategori 1..."
-            />
-            <MultiSelectDropdown
-              label="Kategori 2 (Opsional)"
-              options={k2Options} 
-              selectedValues={selectedK2}
-              onChange={setSelectedK2}
-              placeholder={loadingK2 ? "Memuat..." : (selectedK1.length === 0 ? "Pilih Kategori 1 dahulu" : "Pilih Kategori 2...")}
-              disabled={loadingK2 || selectedK1.length === 0}
-            />
-          </div>
-          
-          <div className="flex justify-end items-center space-x-4 pt-4">
+          {/* Tombol Aksi */}
+          <div className="flex justify-end items-center space-x-4 pt-6 mt-6 border-t">
             {status.message && (
               <p className={`text-sm ${status.isError ? 'text-red-600' : 'text-green-600'}`}>
                 {status.message}
@@ -170,7 +160,7 @@ export default function InputMarketSoundingPage() {
             <button 
               type="submit" 
               disabled={status.loading}
-              className="py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm disabled:bg-blue-400 disabled:cursor-wait"
+              className="py-2 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm disabled:bg-blue-400 disabled:cursor-wait"
             >
               {status.loading ? 'Menyimpan...' : 'Simpan'}
             </button>
