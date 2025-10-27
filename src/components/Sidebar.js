@@ -33,7 +33,7 @@ export default function Sidebar() {
     <>
       <div className="p-4 border-b border-gray-200 flex items-center space-x-3">
         <Image 
-          src="/logo.png"
+          src="/logo.png" // Pastikan logo ada di folder /public
           alt="Logo E-Katalog SDA"
           width={40}
           height={40}

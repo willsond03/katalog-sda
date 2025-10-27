@@ -38,6 +38,7 @@ export default function HistoryMarketSoundingPage() {
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Balai</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Wilayah</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Paket Pekerjaan</th>
+                  {/* Tambahkan kolom untuk K1 dan K2 jika ingin ditampilkan */}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">

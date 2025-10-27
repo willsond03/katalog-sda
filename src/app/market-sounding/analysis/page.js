@@ -22,28 +22,32 @@ export default function AnalysisMarketSoundingPage() {
 
   const eventOptions = useMemo(() => {
     return historyData.map(log => ({
-      id: `${log.tanggal};${log.wilayah}`,
+      id: log.id, // Gunakan ID event sebagai value
       name: `${log.balai}: ${log.paket_pekerjaan} (${log.tanggal})`
     }));
   }, [historyData]);
 
   const runComparison = async () => {
     const daysInput = document.getElementById('comparisonDay');
-    if (!selectedEvent) { 
+    if (!selectedEvent) { // selectedEvent sekarang adalah ID
         alert("Silakan pilih event terlebih dahulu."); 
         return; 
     }
     
     setLoadingAnalysis(true);
     setAnalysisResult(null);
-    const [eventDate, provinsi] = selectedEvent.split(';');
+    
     try {
       const response = await fetch('/api/run-comparison', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventDate, provinsi, daysToAdd: daysInput.value })
+        body: JSON.stringify({ 
+          eventId: selectedEvent, // Kirim ID event
+          daysToAdd: daysInput.value
+        })
       });
       const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Gagal menjalankan analisis');
       setAnalysisResult(result);
     } catch (error) { setAnalysisResult({ error: error.message }); } 
     finally { setLoadingAnalysis(false); }
@@ -56,23 +60,23 @@ export default function AnalysisMarketSoundingPage() {
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Analisa Market Sounding</h1>
       </header>
 
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
+      <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 lg:p-8">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Panel Analisis</h3>
-        <div className="flex flex-col md:flex-row gap-4 items-end">
-          <div className="flex-1 w-full">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+          <div className="md:col-span-2">
             <SearchableSelect
-              label="Pilih Event"
+              label="Pilih Event (Mandatory)"
               options={eventOptions}
               selectedValue={selectedEvent}
               onChange={setSelectedEvent}
               placeholder="Pilih Event dari Histori..."
             />
           </div>
-          <div className="flex-1 w-full md:max-w-xs">
+          <div>
             <label htmlFor="comparisonDay" className="block text-sm font-medium text-gray-700">Analisis Perubahan (H+)</label>
             <input type="number" id="comparisonDay" defaultValue="7" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"/>
           </div>
-          <button onClick={runComparison} disabled={loadingAnalysis} className="w-full md:w-auto bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 shadow-sm disabled:bg-emerald-400 disabled:cursor-wait">
+          <button onClick={runComparison} disabled={loadingAnalysis} className="md:col-start-3 w-full md:w-auto bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 shadow-sm disabled:bg-emerald-400 disabled:cursor-wait">
               {loadingAnalysis ? 'Menganalisa...' : 'Jalankan Analisis'}
           </button>
         </div>
@@ -81,11 +85,11 @@ export default function AnalysisMarketSoundingPage() {
       {loadingAnalysis && <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 text-center text-gray-600">Menganalisa data...</div>}
       
       {analysisResult && (
-        <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 lg:p-8">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Hasil Analisa</h3>
           {analysisResult.error ? <p className="text-red-500">Gagal memuat hasil: {analysisResult.error}</p> :
             <div className="space-y-4">
-              <p className="text-sm text-gray-600">Perbandingan kondisi pada <strong>{analysisResult.startDate}</strong> dengan H+{(new Date(analysisResult.endDate) - new Date(analysisResult.startDate)) / (1000 * 60 * 60 * 24)} hari setelahnya.</p>
+              <p className="text-sm text-gray-600">Perbandingan kondisi pada <strong>{analysisResult.startDate}</strong> dengan H+{analysisResult.daysCompared} hari setelahnya.</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                   <div className="p-4 bg-slate-100 rounded-lg"><h4 className="font-semibold text-gray-700">Produk Awal</h4><p className="text-2xl font-bold">{analysisResult.beforeCount}</p></div>
                   <div className="p-4 bg-slate-100 rounded-lg"><h4 className="font-semibold text-gray-700">Produk Akhir</h4><p className="text-2xl font-bold">{analysisResult.afterCount}</p></div>
