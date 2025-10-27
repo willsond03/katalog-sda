@@ -16,11 +16,10 @@ export default function InputMarketSoundingPage() {
   const [status, setStatus] = useState({ loading: false, message: '', isError: false });
   const [loadingK2, setLoadingK2] = useState(false);
 
-  // 1. Ambil opsi filter utama (Provinsi & K1) saat halaman dimuat
+  // Ambil opsi filter utama (Provinsi & K1)
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        // Panggil API LAMA (filter-options) yang aman
         const optionsRes = await fetch('/api/filter-options'); 
         const optionsData = await optionsRes.json();
         
@@ -37,7 +36,7 @@ export default function InputMarketSoundingPage() {
     fetchOptions();
   }, []); // Hanya berjalan sekali
 
-  // 2. REVISI FITUR: panggil API BARU (k2-options) saat 'selectedK1' berubah
+  // panggil API BARU (k2-options) saat 'selectedK1' berubah
   useEffect(() => {
     const updateK2Options = async () => {
       if (selectedK1.length === 0) {
@@ -51,7 +50,6 @@ export default function InputMarketSoundingPage() {
       selectedK1.forEach(k1 => params.append('kategori_1', k1));
       
       try {
-        // Panggil API BARU
         const optionsRes = await fetch(`/api/k2-options?${params.toString()}`);
         const optionsData = await optionsRes.json();
         setK2Options(optionsData.kategori_2);
@@ -60,11 +58,11 @@ export default function InputMarketSoundingPage() {
       } finally {
         setLoadingK2(false);
       }
-      setSelectedK2([]); // Reset pilihan K2 setiap K1 berubah
+      setSelectedK2([]);
     };
 
     updateK2Options();
-  }, [selectedK1]); // Dependensi hanya 'selectedK1'
+  }, [selectedK1]); 
 
   const provinsiOptionsForSelect = useMemo(() => {
     return allFilterOptions.provinsi.map(opt => ({ id: opt, name: opt }));
@@ -109,12 +107,15 @@ export default function InputMarketSoundingPage() {
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Input Market Sounding</h1>
       </header>
 
-      {/* 1. REVISI LAYOUT: Ganti 'max-w-2xl' menjadi 'max-w-4xl' agar lebih lebar */}
+      {/* Layout max-w-4xl dipertahankan */}
       <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 lg:p-8 max-w-4xl mx-auto">
         <form onSubmit={handleMarketSoundingSubmit} className="space-y-6">
           
-          <fieldset className="space-y-4 p-4 border rounded-lg">
-            <legend className="text-lg font-semibold text-gray-900 px-2">Parameter Mandatory</legend>
+          {/* --- PERBAIKAN VISUAL 1 --- */}
+          {/* Mengganti <fieldset> dengan <div> */}
+          <div className="space-y-4 p-4 border rounded-lg">
+            {/* Mengganti <legend> dengan <div> */}
+            <div className="text-lg font-semibold text-gray-900 mb-2">Parameter Mandatory</div>
             <div>
               <label htmlFor="balai" className="block text-sm font-medium text-gray-700">Balai</label>
               <input type="text" id="balai" name="balai" required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"/>
@@ -136,11 +137,13 @@ export default function InputMarketSoundingPage() {
               <label htmlFor="tanggal" className="block text-sm font-medium text-gray-700">Tanggal</label>
               <input type="date" id="tanggal" name="tanggal" required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"/>
             </div>
-          </fieldset>
+          </div>
           
-          {/* 3. REVISI VISUAL: Tambahkan gradasi pink/merah */}
-          <fieldset className="space-y-4 p-4 rounded-lg bg-gradient-to-br from-red-50 to-orange-100">
-            <legend className="text-lg font-semibold text-gray-900 px-2">Parameter Opsional</legend>
+          {/* --- PERBAIKAN VISUAL 2 --- */}
+          {/* Mengganti <fieldset> dengan <div> */}
+          <div className="space-y-4 p-4 rounded-lg bg-gradient-to-br from-red-50 to-orange-100">
+            {/* Mengganti <legend> dengan <div> */}
+            <div className="text-lg font-semibold text-gray-900 mb-2">Parameter Opsional</div>
             <MultiSelectDropdown
               label="Kategori 1 (Opsional)"
               options={allFilterOptions.kategori_1}
@@ -150,13 +153,13 @@ export default function InputMarketSoundingPage() {
             />
             <MultiSelectDropdown
               label="Kategori 2 (Opsional)"
-              options={k2Options} // 2. REVISI FITUR: Gunakan state 'k2Options'
+              options={k2Options} 
               selectedValues={selectedK2}
               onChange={setSelectedK2}
               placeholder={loadingK2 ? "Memuat..." : (selectedK1.length === 0 ? "Pilih Kategori 1 dahulu" : "Pilih Kategori 2...")}
-              disabled={loadingK2 || selectedK1.length === 0} // 2. REVISI FITUR: Disable jika K1 kosong
+              disabled={loadingK2 || selectedK1.length === 0}
             />
-          </fieldset>
+          </div>
           
           <div className="flex justify-end items-center space-x-4 pt-4">
             {status.message && (
