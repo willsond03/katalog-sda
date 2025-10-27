@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import SearchableSelect from '../../../components/SearchableSelect';
 
 export default function AnalysisMarketSoundingPage() {
-  const [historyData, setHistoryData] = useState([]);
+  const [historyData, setHistoryData] = useState([]); // Tetap array kosong
   const [analysisResult, setAnalysisResult] = useState(null);
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState('');
@@ -12,24 +12,32 @@ export default function AnalysisMarketSoundingPage() {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
+        // Panggil API (tanpa parameter 'page')
         const response = await fetch(`/api/market-sounding?t=${new Date().getTime()}`);
         const data = await response.json();
-        setHistoryData(data);
+        
+        // --- INI PERBAIKANNYA ---
+        // Kita ambil array 'items' dari dalam objek 'data'
+        setHistoryData(data.items); 
+        
       } catch (error) { console.error("Gagal mengambil histori:", error); }
     };
     fetchHistory();
-  }, []);
+  }, []); // Hanya berjalan sekali saat halaman dimuat
 
   const eventOptions = useMemo(() => {
+    // Sekarang historyData dijamin array
+    if (!Array.isArray(historyData)) return []; 
+    
     return historyData.map(log => ({
-      id: log.id, // Gunakan ID event sebagai value
+      id: log.id, // Gunakan ID unik dari event
       name: `${log.balai}: ${log.paket_pekerjaan} (${log.tanggal})`
     }));
-  }, [historyData]);
+  }, [historyData]); // <-- useMemo ini sekarang aman
 
   const runComparison = async () => {
     const daysInput = document.getElementById('comparisonDay');
-    if (!selectedEvent) { // selectedEvent sekarang adalah ID
+    if (!selectedEvent) { 
         alert("Silakan pilih event terlebih dahulu."); 
         return; 
     }
@@ -47,7 +55,7 @@ export default function AnalysisMarketSoundingPage() {
         })
       });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Gagal menjalankan analisis');
+      if (!response.ok) throw new Error(result.error);
       setAnalysisResult(result);
     } catch (error) { setAnalysisResult({ error: error.message }); } 
     finally { setLoadingAnalysis(false); }
@@ -60,12 +68,13 @@ export default function AnalysisMarketSoundingPage() {
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Analisa Market Sounding</h1>
       </header>
 
+      {/* Panel Analisis */}
       <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 lg:p-8">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Panel Analisis</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
           <div className="md:col-span-2">
             <SearchableSelect
-              label="Pilih Event (Mandatory)"
+              label="Pilih Event"
               options={eventOptions}
               selectedValue={selectedEvent}
               onChange={setSelectedEvent}
@@ -82,6 +91,7 @@ export default function AnalysisMarketSoundingPage() {
         </div>
       </div>
 
+      {/* Hasil Analisis (Tidak berubah) */}
       {loadingAnalysis && <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 text-center text-gray-600">Menganalisa data...</div>}
       
       {analysisResult && (
@@ -89,7 +99,7 @@ export default function AnalysisMarketSoundingPage() {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Hasil Analisa</h3>
           {analysisResult.error ? <p className="text-red-500">Gagal memuat hasil: {analysisResult.error}</p> :
             <div className="space-y-4">
-              <p className="text-sm text-gray-600">Perbandingan kondisi pada <strong>{analysisResult.startDate}</strong> dengan H+{analysisResult.daysCompared} hari setelahnya.</p>
+              <p className="text-sm text-gray-600">Perbandingan kondisi pada <strong>{analysisResult.startDate}</strong> dengan H+{analysisResult.daysCompared} hari setelahnya (<strong>{analysisResult.endDate}</strong>).</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                   <div className="p-4 bg-slate-100 rounded-lg"><h4 className="font-semibold text-gray-700">Produk Awal</h4><p className="text-2xl font-bold">{analysisResult.beforeCount}</p></div>
                   <div className="p-4 bg-slate-100 rounded-lg"><h4 className="font-semibold text-gray-700">Produk Akhir</h4><p className="text-2xl font-bold">{analysisResult.afterCount}</p></div>

@@ -2,53 +2,57 @@
 export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 
-// --- FUNGSI GET DIPERBARUI UNTUK PAGINASI ---
+// --- FUNGSI GET DIPERBARUI UNTUK MENANGANI 2 KASUS ---
 export async function GET(request) {
   try {
     const db = process.env.DB;
     const { searchParams } = new URL(request.url);
+    const pageParam = searchParams.get('page');
 
-    const page = parseInt(searchParams.get('page')) || 1;
-    const itemsPerPage = 10; // Sesuai permintaan Anda
-    const offset = (page - 1) * itemsPerPage;
+    if (pageParam) {
+      // KASUS 1: Ada parameter 'page' (untuk halaman Histori)
+      const page = parseInt(pageParam) || 1;
+      const itemsPerPage = 10;
+      const offset = (page - 1) * itemsPerPage;
 
-    // 1. Query untuk menghitung total item
-    const countStmt = db.prepare("SELECT COUNT(*) as total FROM market_sounding_logs");
-    const { results: countResult } = await countStmt.all();
-    const totalItems = countResult[0].total;
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
+      const countStmt = db.prepare("SELECT COUNT(*) as total FROM market_sounding_logs");
+      const { results: countResult } = await countStmt.all();
+      const totalItems = countResult[0].total;
+      const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-    // 2. Query untuk mengambil data per halaman
-    const dataStmt = db.prepare(
-      "SELECT * FROM market_sounding_logs ORDER BY tanggal DESC LIMIT ? OFFSET ?"
-    ).bind(itemsPerPage, offset);
-    const { results: items } = await dataStmt.all();
-    
-    // 3. Kembalikan objek terstruktur
-    const response = {
-      items: items,
-      totalItems: totalItems,
-      page: page,
-      totalPages: totalPages
-    };
+      const dataStmt = db.prepare(
+        "SELECT * FROM market_sounding_logs ORDER BY tanggal DESC LIMIT ? OFFSET ?"
+      ).bind(itemsPerPage, offset);
+      const { results: items } = await dataStmt.all();
+      
+      return NextResponse.json({
+        items: items,
+        totalItems: totalItems,
+        page: page,
+        totalPages: totalPages
+      });
 
-    return NextResponse.json(response);
+    } else {
+      // KASUS 2: Tidak ada parameter 'page' (untuk dropdown Analisa)
+      // Ambil SEMUA data event
+      const dataStmt = db.prepare("SELECT id, tanggal, balai, wilayah, paket_pekerjaan FROM market_sounding_logs ORDER BY tanggal DESC");
+      const { results: items } = await dataStmt.all();
+      
+      // Tetap kembalikan dalam format objek agar konsisten
+      return NextResponse.json({ items: items });
+    }
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
 
-// FUNGSI UNTUK MENYIMPAN DATA BARU (METHOD POST)
+// FUNGSI POST (Tidak berubah)
 export async function POST(request) {
   try {
     const db = process.env.DB;
     const { 
-      balai, 
-      wilayah, 
-      paket_pekerjaan, 
-      tanggal,
-      kategori_1, 
-      kategori_2  
+      balai, wilayah, paket_pekerjaan, tanggal,
+      kategori_1, kategori_2  
     } = await request.json();
     if (!balai || !wilayah || !paket_pekerjaan || !tanggal) {
         return NextResponse.json({ error: 'Parameter mandatory tidak lengkap.' }, { status: 400 });
@@ -65,7 +69,7 @@ export async function POST(request) {
   }
 }
 
-// FUNGSI UNTUK HAPUS DATA (METHOD DELETE)
+// FUNGSI DELETE (Tidak berubah)
 export async function DELETE(request) {
   try {
     const db = process.env.DB;
