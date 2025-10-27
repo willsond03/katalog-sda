@@ -155,7 +155,7 @@ export default function DashboardPage() {
                     <StatCard 
                         title="Total Product" 
                         value={loading.stats ? '...' : (stats?.total_produk.toLocaleString('id-ID') || '0')}
-                        className="bg-gradient-to-br from-blue-50 to-slate-100" // Gradasi Biru
+                        className="bg-gradient-to-br from-blue-50 to-slate-100"
                     >
                         <span className="text-gray-500">Last update: {loading.stats ? '...' : (stats?.last_update || 'N/A')}</span>
                     </StatCard>
@@ -163,7 +163,7 @@ export default function DashboardPage() {
                     <StatCard 
                         title="Kategori 1" 
                         value={loading.stats ? '...' : (stats?.total_k1.toLocaleString('id-ID') || '0')}
-                        className="bg-gradient-to-br from-red-50 to-orange-100" // Gradasi Pink/Peach
+                        className="bg-gradient-to-br from-red-50 to-orange-100"
                     >
                         <button 
                             onClick={() => handleOpenModal('Kategori 1', filterOptions.kategori_1)}
@@ -177,7 +177,7 @@ export default function DashboardPage() {
                     <StatCard 
                         title="Kategori 2" 
                         value={loading.stats ? '...' : (stats?.total_k2.toLocaleString('id-ID') || '0')}
-                        className="bg-gradient-to-br from-purple-50 to-indigo-100" // Gradasi Ungu
+                        className="bg-gradient-to-br from-purple-50 to-indigo-100"
                     >
                          <button 
                             onClick={() => handleOpenModal('Kategori 2', filterOptions.kategori_2)}
@@ -191,7 +191,7 @@ export default function DashboardPage() {
                     <StatCard 
                         title="Histori Market Sounding" 
                         value={loading.stats ? '...' : (stats?.total_history.toLocaleString('id-ID') || '0')}
-                        className="bg-gradient-to-br from-green-50 to-emerald-100" // Gradasi Hijau
+                        className="bg-gradient-to-br from-green-50 to-emerald-100"
                     >
                         <Link href="/market-sounding" className="font-medium text-blue-600 hover:text-blue-500">
                             Klik lebih lanjut
@@ -204,19 +204,25 @@ export default function DashboardPage() {
                     onClear={handleFilterChange}
                 />
                 
-                <FilterPanel 
-                    filterOptions={filterOptions}
-                    currentFilters={filters}
-                    onFilterChange={handleFilterChange}
-                    isLoading={loading.options}
-                />
-
-                <div className="bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col">
-                    <div className="p-6">
-                        <h2 className="text-lg font-semibold text-gray-900">Persebaran Produk</h2>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col">
+                        <div className="p-6">
+                            <h2 className="text-lg font-semibold text-gray-900">Persebaran Produk</h2>
+                        </div>
+                        <div className="h-[50vh] px-2 pb-2">
+                            {loading.options ? <div className="flex items-center justify-center h-full text-gray-500"><p>Memuat data peta...</p></div> : <Map mapData={mapData} />}
+                        </div>
                     </div>
-                    <div className="h-[60vh] px-2 pb-2">
-                        {loading.options ? <div className="flex items-center justify-center h-full text-gray-500"><p>Memuat data peta...</p></div> : <Map mapData={mapData} />}
+
+                    <div className="lg:col-span-1">
+                        <FilterPanel 
+                            filterOptions={filterOptions}
+                            currentFilters={filters}
+                            onFilterChange={handleFilterChange}
+                            isLoading={loading.options}
+                            className="bg-gradient-to-br from-blue-50 to-slate-100"
+                        />
                     </div>
                 </div>
                 

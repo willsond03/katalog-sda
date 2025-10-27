@@ -4,25 +4,29 @@ import { useState, useMemo, useEffect, Fragment } from 'react';
 import { Transition } from '@headlessui/react';
 import SearchableSelect from './SearchableSelect';
 
-export default function FilterPanel({ filterOptions, currentFilters, onFilterChange, isLoading }) {
-  // State untuk mengontrol buka/tutup panel filter di mobile
+// 1. Terima prop 'className' dan berikan 'bg-white' sebagai default
+export default function FilterPanel({ 
+  filterOptions, 
+  currentFilters, 
+  onFilterChange, 
+  isLoading, 
+  className = 'bg-white' 
+}) {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Otomatis buka filter di layar desktop saat komponen dimuat
   useEffect(() => {
-    if (window.innerWidth >= 768) { // 768px adalah breakpoint 'md' di Tailwind
+    if (window.innerWidth >= 768) {
       setIsOpen(true);
     }
   }, []);
 
-  // Mengubah data dari API menjadi format yang bisa dibaca oleh SearchableSelect
   const provinsiOptions = useMemo(() => filterOptions.provinsi?.map(p => ({ id: p, name: p })) || [], [filterOptions.provinsi]);
   const k1Options = useMemo(() => filterOptions.kategori_1?.map(k1 => ({ id: k1, name: k1 })) || [], [filterOptions.kategori_1]);
   const k2Options = useMemo(() => filterOptions.kategori_2?.map(k2 => ({ id: k2, name: k2 })) || [], [filterOptions.kategori_2]);
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-      {/* Header Panel dengan Tombol Toggle untuk Mobile */}
+    // 2. Terapkan 'className' di sini dan tambahkan style kartu dasar
+    <div className={`border border-slate-200 rounded-xl shadow-sm ${className}`}>
       <div className="flex justify-between items-center p-4">
         <h2 className="text-lg font-semibold text-gray-900">Filter Data</h2>
         <button 
@@ -33,7 +37,6 @@ export default function FilterPanel({ filterOptions, currentFilters, onFilterCha
         </button>
       </div>
 
-      {/* Konten Filter yang Bisa Dilipat/Ditutup */}
       <Transition
         as={Fragment}
         show={isOpen}
@@ -44,10 +47,8 @@ export default function FilterPanel({ filterOptions, currentFilters, onFilterCha
         leaveFrom="opacity-100 translate-y-0"
         leaveTo="opacity-0 -translate-y-1"
       >
-        <div className="border-t p-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-            
-            {/* Filter Provinsi SEKARANG MENGGUNAKAN SearchableSelect */}
+        <div className="border-t border-slate-200 p-4">
+          <div className="grid grid-cols-1 gap-4 items-end">
             <div className="relative">
                <SearchableSelect
                   label="Provinsi"
@@ -58,8 +59,6 @@ export default function FilterPanel({ filterOptions, currentFilters, onFilterCha
                   disabled={isLoading}
                 />
             </div>
-
-            {/* Filter Kategori 1 */}
             <div className="relative">
                <SearchableSelect
                   label="Kategori 1"
@@ -70,8 +69,6 @@ export default function FilterPanel({ filterOptions, currentFilters, onFilterCha
                   disabled={isLoading}
                 />
             </div>
-            
-            {/* Filter Kategori 2 */}
             <div className="relative">
                <SearchableSelect
                   label="Kategori 2"
