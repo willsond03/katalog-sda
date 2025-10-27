@@ -193,7 +193,8 @@ export default function DashboardPage() {
                         value={loading.stats ? '...' : (stats?.total_history.toLocaleString('id-ID') || '0')}
                         className="bg-gradient-to-br from-green-50 to-emerald-100"
                     >
-                        <Link href="/market-sounding" className="font-medium text-blue-600 hover:text-blue-500">
+                        {/* Link diubah ke '/market-sounding/history' */}
+                        <Link href="/market-sounding/history" className="font-medium text-blue-600 hover:text-blue-500">
                             Klik lebih lanjut
                         </Link>
                     </StatCard>
