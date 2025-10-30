@@ -24,20 +24,42 @@ const IconAnalysis = (props) => (
 const ChevronDownIcon = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" {...props}><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.06z" clipRule="evenodd" /></svg>
 );
-// --- END IKON ---
 
+// --- IKON BARU ---
+const IconBantuan = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}><path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" /></svg>
+);
+const IconPanduan = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>
+);
+const IconSaran = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}><path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.186m-1.5.186a6.01 6.01 0 0 1-1.5-.186m1.5.186V12.75A6.006 6.006 0 0 1 12 7.5c0-1.056.218-2.06.62-2.936Ka10.5 5.176A6.008 6.008 0 0 0 12 7.5c0 1.056-.218 2.06-.62 2.936m-1.125 0a6.006 6.006 0 0 1-1.75.043m1.75-.043a6.006 6.006 0 0 0 1.75.043m0 0v-1.125c0-.621-.504-1.125-1.125-1.125H12.75V15m0 3h.008v.008H12.75V18Zm-1.293-9.293a1.125 1.125 0 0 1 0-1.591l.002-.002a1.125 1.125 0 0 1 1.591 0l2.25 2.25a1.125 1.125 0 0 1 0 1.591l-2.25 2.25a1.125 1.125 0 0 1-1.591 0l-.002-.002a1.125 1.125 0 0 1 0-1.591L11.25 12l-1.543-1.543Z" /></svg>
+);
+// --- END IKON ---
 
 export default function Sidebar() {
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+
+  // Cek path untuk Market Sounding
   const isMarketSoundingActive = pathname.startsWith('/market-sounding');
   const [isSubmenuOpen, setIsSubmenuOpen] = useState(isMarketSoundingActive);
 
-  // --- REVISI 1: Label diubah & ikon ditambahkan ---
+  // --- 1. STATE & PATH BARU UNTUK BANTUAN ---
+  const isBantuanActive = pathname.startsWith('/bantuan');
+  const [isBantuanOpen, setIsBantuanOpen] = useState(isBantuanActive);
+
+  // Daftar item Market Sounding
   const subNavItems = [
     { href: '/market-sounding/input', label: 'Input', icon: IconInput },
     { href: '/market-sounding/history', label: 'Histori', icon: IconHistory },
     { href: '/market-sounding/analysis', label: 'Analisa', icon: IconAnalysis },
+  ];
+
+  // --- 2. DAFTAR ITEM BARU UNTUK BANTUAN ---
+  const bantuanNavItems = [
+    { href: '/bantuan/panduan', label: 'Panduan', icon: IconPanduan },
+    { href: '/bantuan/saran', label: 'Saran', icon: IconSaran },
   ];
 
   const sidebarContent = (
@@ -57,7 +79,7 @@ export default function Sidebar() {
       </div>
       
       <nav className="flex-1 px-4 py-2 space-y-2">
-        {/* Link Dashboard (dengan ikon) */}
+        {/* Link Dashboard */}
         <Link
           href="/"
           onClick={() => setMobileMenuOpen(false)}
@@ -71,7 +93,7 @@ export default function Sidebar() {
           <span>Dashboard</span>
         </Link>
         
-        {/* Tombol Dropdown Market Sounding (dengan ikon) */}
+        {/* Dropdown Market Sounding */}
         <div>
           <button
             onClick={() => setIsSubmenuOpen(!isSubmenuOpen)}
@@ -88,7 +110,6 @@ export default function Sidebar() {
             <ChevronDownIcon className={`w-5 h-5 transition-transform ${isSubmenuOpen ? 'rotate-180' : ''}`} />
           </button>
           
-          {/* Sub-menu (dengan ikon) */}
           {isSubmenuOpen && (
             <div className="mt-1 pl-4 space-y-1">
               {subNavItems.map(item => (
@@ -109,6 +130,45 @@ export default function Sidebar() {
             </div>
           )}
         </div>
+        
+        {/* --- 3. BLOK JSX BARU UNTUK BANTUAN --- */}
+        <div>
+          <button
+            onClick={() => setIsBantuanOpen(!isBantuanOpen)}
+            className={`flex items-center justify-between w-full p-2 rounded-lg font-semibold text-sm transition-colors duration-200 ${
+              isBantuanActive && !isBantuanOpen
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <span className="flex items-center">
+              <IconBantuan className="w-5 h-5 mr-3 shrink-0" />
+              <span>Bantuan</span>
+            </span>
+            <ChevronDownIcon className={`w-5 h-5 transition-transform ${isBantuanOpen ? 'rotate-180' : ''}`} />
+          </button>
+          
+          {isBantuanOpen && (
+            <div className="mt-1 pl-4 space-y-1">
+              {bantuanNavItems.map(item => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center p-2 rounded-lg font-medium text-xs transition-colors duration-200 ${
+                    pathname === item.href
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'text-gray-500 hover:bg-gray-100'
+                  }`}
+                >
+                  <item.icon className="w-4 h-4 mr-2 shrink-0" />
+                  <span>{item.label}</span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
       </nav>
     </>
   );
