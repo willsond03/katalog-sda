@@ -16,7 +16,6 @@ export default function AnalysisMarketSoundingPage() {
         const response = await fetch(`/api/market-sounding?t=${new Date().getTime()}`);
         const data = await response.json();
         
-        // --- INI PERBAIKANNYA ---
         // Kita ambil array 'items' dari dalam objek 'data'
         setHistoryData(data.items); 
         
@@ -91,7 +90,7 @@ export default function AnalysisMarketSoundingPage() {
         </div>
       </div>
 
-      {/* Hasil Analisis (Tidak berubah) */}
+      {/* Hasil Analisis */}
       {loadingAnalysis && <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 text-center text-gray-600">Menganalisa data...</div>}
       
       {analysisResult && (
@@ -109,7 +108,33 @@ export default function AnalysisMarketSoundingPage() {
                   <h4 className="font-semibold text-gray-700">Produk Baru ({analysisResult.newProducts.length}):</h4>
                   <div className="overflow-auto max-h-48 mt-2 border rounded-lg">
                       <table className="min-w-full"><thead className="bg-slate-50 sticky top-0"><tr><th className="px-4 py-2 text-left text-xs font-semibold uppercase">Nama Produk</th><th className="px-4 py-2 text-left text-xs font-semibold uppercase">Perusahaan</th></tr></thead>
-                      <tbody className="divide-y">{analysisResult.newProducts.length > 0 ? analysisResult.newProducts.map((p, i) => <tr key={i}><td className="px-4 py-2 text-sm">{p.nama_produk}</td><td className="px-4 py-2 text-sm text-gray-600">{p.perusahaan}</td></tr>) : <tr><td colSpan="2" className="text-center py-4 text-gray-500">Tidak ada.</td></tr>}</tbody></table>
+                      
+                      {/* --- INI PERBAIKANNYA --- */}
+                      <tbody className="divide-y">
+                        {analysisResult.newProducts.length > 0 ? (
+                          analysisResult.newProducts.map((p, i) => (
+                            <tr key={i}>
+                              <td className="px-4 py-2 text-sm">
+                                {/* Tambahkan link di sini */}
+                                <a 
+                                  href={p.product_link} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="text-blue-600 hover:underline"
+                                >
+                                  {p.nama_produk}
+                                </a>
+                              </td>
+                              <td className="px-4 py-2 text-sm text-gray-600">{p.perusahaan}</td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr><td colSpan="2" className="text-center py-4 text-gray-500">Tidak ada.</td></tr>
+                        )}
+                      </tbody>
+                      {/* --- AKHIR PERBAIKAN --- */}
+                      
+                      </table>
                   </div>
               </div>
             </div>

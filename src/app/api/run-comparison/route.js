@@ -8,21 +8,16 @@ import { NextResponse } from 'next/server';
 function buildDynamicQuery(baseSelect, mandatoryConditions, mandatoryParams, optionalParams = {}) {
   let conditions = [...mandatoryConditions];
   let params = [...mandatoryParams];
-
-  // Tambahkan Kategori 1 jika ada
   if (optionalParams.kategori_1 && optionalParams.kategori_1.length > 0) {
     const k1Placeholders = optionalParams.kategori_1.map(() => '?').join(',');
     conditions.push(`kategori_1 IN (${k1Placeholders})`);
     params.push(...optionalParams.kategori_1);
   }
-
-  // Tambahkan Kategori 2 jika ada
   if (optionalParams.kategori_2 && optionalParams.kategori_2.length > 0) {
     const k2Placeholders = optionalParams.kategori_2.map(() => '?').join(',');
     conditions.push(`kategori_2 IN (${k2Placeholders})`);
     params.push(...optionalParams.kategori_2);
   }
-
   const query = `${baseSelect} FROM produk WHERE ${conditions.join(' AND ')}`;
   return { query, params };
 }
@@ -36,7 +31,6 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Parameter tidak lengkap.' }, { status: 400 });
     }
     
-    // 1. Ambil detail event (termasuk parameter opsional) dari DB
     const eventStmt = db.prepare("SELECT * FROM market_sounding_logs WHERE id = ?");
     const eventResult = await eventStmt.bind(eventId).first();
 
@@ -44,7 +38,6 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Event market sounding tidak ditemukan.' }, { status: 404 });
     }
 
-    // 2. Ekstrak parameter dari event
     const { 
       wilayah: provinsi, 
       tanggal: eventDate, 
@@ -57,7 +50,6 @@ export async function POST(request) {
       kategori_2: k2_json ? JSON.parse(k2_json) : []
     };
 
-    // 3. Hitung rentang tanggal
     const startDate = new Date(eventDate);
     const endDate = new Date(startDate);
     const daysToAddInt = parseInt(daysToAdd, 10);
@@ -65,47 +57,47 @@ export async function POST(request) {
     
     const startDateString = startDate.toISOString().split('T')[0];
     const endDateString = endDate.toISOString().split('T')[0];
-
-    // 4. Bangun query dinamis berdasarkan parameter event
-    // Menggunakan DATE(last_update) sesuai file route.js yang Anda lampirkan
     
-    // Query 'Before'
+    // --- PERBAIKAN 1: Tambahkan 'product_link' ke SELECT ---
+    const selectFields = "SELECT nama_produk, perusahaan, product_link";
+
     const beforeMandatory = ['provinsi = ?', 'DATE(last_update) <= ?'];
     const beforeParams = [provinsi, startDateString];
     const { query: beforeQueryStr, params: beforeAllParams } = buildDynamicQuery(
-      "SELECT nama_produk, perusahaan", 
+      selectFields, 
       beforeMandatory, 
       beforeParams, 
       optionalParams
     );
     const beforeStmt = db.prepare(beforeQueryStr).bind(...beforeAllParams);
 
-    // Query 'After'
     const afterMandatory = ['provinsi = ?', 'DATE(last_update) <= ?'];
     const afterParams = [provinsi, endDateString];
     const { query: afterQueryStr, params: afterAllParams } = buildDynamicQuery(
-      "SELECT nama_produk, perusahaan",
+      selectFields,
       afterMandatory,
       afterParams,
       optionalParams
     );
     const afterStmt = db.prepare(afterQueryStr).bind(...afterAllParams);
 
-    // 5. Jalankan batch query
     const [beforeResult, afterResult] = await db.batch([beforeStmt, afterStmt]);
 
-    const beforeProducts = beforeResult.results.map(p => `${p.nama_produk}::${p.perusahaan}`);
-    const afterProducts = afterResult.results.map(p => `${p.nama_produk}::${p.perusahaan}`);
+    // --- PERBAIKAN 2: Gabungkan link ke dalam string unik ---
+    const beforeProducts = beforeResult.results.map(p => `${p.nama_produk}::${p.perusahaan}::${p.product_link || ''}`);
+    const afterProducts = afterResult.results.map(p => `${p.nama_produk}::${p.perusahaan}::${p.product_link || ''}`);
     
     const beforeCount = beforeProducts.length;
     const afterCount = afterProducts.length;
 
     const beforeProductSet = new Set(beforeProducts);
+    
+    // --- PERBAIKAN 3: Ekstrak link saat memetakan produk baru ---
     const newProducts = afterProducts
         .filter(p => !beforeProductSet.has(p))
         .map(p => {
-            const [nama, perusahaan] = p.split('::');
-            return { nama_produk: nama, perusahaan: perusahaan };
+            const [nama, perusahaan, link] = p.split('::');
+            return { nama_produk: nama, perusahaan: perusahaan, product_link: link };
         });
 
     const response = {
