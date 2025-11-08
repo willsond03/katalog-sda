@@ -46,7 +46,7 @@ export default function PanduanPage() {
             <div className="relative w-full aspect-video">
               <iframe
                 className="absolute top-0 left-0 w-full h-full rounded-b-lg"
-                src="https://www.youtube.com/embed/D0UnqGm_miA" // <-- GANTI VIDEO_ID_ANDA
+                src="https://www.youtube.com/embed/Rq2xqX3kX-Q" // <-- GANTI VIDEO_ID_ANDA
                 title="YouTube video player"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
