@@ -1,9 +1,9 @@
 // Lokasi: src/app/market-sounding/history/page.js
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import Pagination from '../../../components/Pagination'; // <-- 1. IMPORT PAGINASI
+import Pagination from '../../../components/Pagination';
 
-// Helper untuk memberi warna pada angka perubahan
+// Helper untuk format angka perubahan (Warna Hijau/Merah)
 const formatChange = (value) => {
   if (typeof value !== 'number') return <span className="text-red-500 font-medium text-xs">{value}</span>;
   if (value > 0) return <span className="text-green-600 font-medium">+{value}</span>;
@@ -11,46 +11,50 @@ const formatChange = (value) => {
   return <span className="text-gray-500">{value}</span>;
 };
 
+// --- HELPER BARU: FORMAT TAMPILAN WILAYAH ---
+const formatWilayah = (data) => {
+  if (!data) return '-';
+  try {
+    // Cek apakah data berbentuk JSON Array string (contoh: '["ACEH","BALI"]')
+    const parsed = JSON.parse(data);
+    if (Array.isArray(parsed)) {
+      return parsed.join(', '); // Ubah jadi "ACEH, BALI"
+    }
+    return data;
+  } catch (e) {
+    return data; // Jika bukan JSON, tampilkan apa adanya
+  }
+};
+
 export default function HistoryMarketSoundingPage() {
   const [historyData, setHistoryData] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [deleteStatus, setDeleteStatus] = useState({ loading: false, error: null });
   const [changes, setChanges] = useState({}); 
-
-  // --- 2. TAMBAHKAN STATE PAGINASI ---
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, totalItems: 0 });
 
-  // --- 3. GUNAKAN useCallback AGAR BISA DIPAKAI DI useEffect ---
   const fetchHistory = useCallback(async () => {
     setLoadingHistory(true);
     try {
-      // Kirim parameter 'page' ke API
       const response = await fetch(`/api/market-sounding?page=${pagination.page}&t=${new Date().getTime()}`);
       if (!response.ok) throw new Error('Gagal mengambil data');
-      
       const data = await response.json();
-      
-      // Set data dan info paginasi
       setHistoryData(data.items);
       setPagination(prev => ({ ...prev, totalPages: data.totalPages, totalItems: data.totalItems }));
-      
     } catch (error) { 
       console.error("Gagal mengambil histori:", error); 
     } finally { 
       setLoadingHistory(false); 
     }
-  }, [pagination.page]); // <-- Tambahkan dependensi
+  }, [pagination.page]);
 
-  // --- 4. MODIFIKASI useEffect ---
   useEffect(() => {
     fetchHistory();
-  }, [fetchHistory]); // <-- Panggil fetchHistory
+  }, [fetchHistory]);
 
-  // --- 5. TAMBAHKAN HANDLER UBAH HALAMAN ---
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
         setPagination(prev => ({ ...prev, page: newPage }));
-        // Scroll ke atas tabel
         const tableContainer = document.querySelector("#history-table-container");
         if (tableContainer) window.scrollTo(0, tableContainer.offsetTop);
     }
@@ -71,7 +75,6 @@ export default function HistoryMarketSoundingPage() {
       const result = await response.json();
       setChanges(prev => ({ ...prev, [logId]: { loading: false, value: result.change } }));
     } catch (error) {
-      console.error("Gagal kalkulasi:", error);
       setChanges(prev => ({ ...prev, [logId]: { loading: false, value: error.message } }));
     }
   };
@@ -94,7 +97,6 @@ export default function HistoryMarketSoundingPage() {
         const result = await response.json();
         throw new Error(result.error || 'Gagal menghapus');
       }
-      // Refresh data di halaman saat ini
       fetchHistory(); 
       alert("Event berhasil dihapus.");
     } catch (error) {
@@ -111,7 +113,6 @@ export default function HistoryMarketSoundingPage() {
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Histori Market Sounding</h1>
       </header>
 
-      {/* --- 6. TAMBAHKAN ID UNTUK SCROLL --- */}
       <div id="history-table-container" className="bg-white border border-slate-200 rounded-xl shadow-sm">
         <div className="overflow-x-auto">
           {loadingHistory && historyData.length === 0 ? (
@@ -129,15 +130,6 @@ export default function HistoryMarketSoundingPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {/* Tampilkan loading di atas tabel saat pindah halaman */}
-                {loadingHistory && (
-                  <tr>
-                    <td colSpan="6" className="text-center py-4 text-gray-500 text-sm">
-                      Memuat halaman {pagination.page}...
-                    </td>
-                  </tr>
-                )}
-                
                 {!loadingHistory && historyData.length > 0 ? (
                   historyData.map((log) => {
                     const changeData = changes[log.id]; 
@@ -145,7 +137,10 @@ export default function HistoryMarketSoundingPage() {
                       <tr key={log.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 text-sm whitespace-nowrap">{log.tanggal}</td>
                         <td className="px-6 py-4 text-sm whitespace-nowrap">{log.balai}</td>
-                        <td className="px-6 py-4 text-sm whitespace-nowrap">{log.wilayah}</td>
+                        
+                        {/* --- GUNAKAN FORMATTER DI SINI --- */}
+                        <td className="px-6 py-4 text-sm">{formatWilayah(log.wilayah)}</td>
+                        
                         <td className="px-6 py-4 text-sm">{log.paket_pekerjaan}</td>
                         <td className="px-6 py-4 text-sm text-center align-middle">
                           {changeData?.loading ? (
@@ -174,27 +169,15 @@ export default function HistoryMarketSoundingPage() {
                     );
                   })
                 ) : (
-                  !loadingHistory && (
-                    <tr>
-                      <td colSpan="6" className="text-center text-gray-500 py-10">
-                        Tidak ada data histori.
-                      </td>
-                    </tr>
-                  )
+                  <tr><td colSpan="6" className="text-center text-gray-500 py-10">Tidak ada data histori.</td></tr>
                 )}
               </tbody>
             </table>
           )}
         </div>
-        
-        {/* --- 7. RENDER KOMPONEN PAGINASI --- */}
         {pagination.totalPages > 1 && (
           <div className="p-4 border-t border-gray-200">
-            <Pagination 
-              currentPage={pagination.page} 
-              totalPages={pagination.totalPages} 
-              onPageChange={handlePageChange} 
-            />
+            <Pagination currentPage={pagination.page} totalPages={pagination.totalPages} onPageChange={handlePageChange} />
           </div>
         )}
       </div>

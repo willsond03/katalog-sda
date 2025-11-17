@@ -3,17 +3,27 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 
 /**
- * Helper untuk query dinamis
+ * Helper function: Membangun query SQL secara dinamis untuk multi-filter
  */
 function buildDynamicQuery(baseSelect, mandatoryConditions, mandatoryParams, optionalParams = {}) {
   let conditions = [...mandatoryConditions];
   let params = [...mandatoryParams];
 
+  // 1. Filter Kota (Multi-Select)
+  if (optionalParams.kota && optionalParams.kota.length > 0) {
+    const ph = optionalParams.kota.map(() => '?').join(',');
+    conditions.push(`kota IN (${ph})`);
+    params.push(...optionalParams.kota);
+  }
+
+  // 2. Filter Kategori 1 (Multi-Select)
   if (optionalParams.kategori_1 && optionalParams.kategori_1.length > 0) {
     const ph = optionalParams.kategori_1.map(() => '?').join(',');
     conditions.push(`kategori_1 IN (${ph})`);
     params.push(...optionalParams.kategori_1);
   }
+
+  // 3. Filter Kategori 2 (Multi-Select)
   if (optionalParams.kategori_2 && optionalParams.kategori_2.length > 0) {
     const ph = optionalParams.kategori_2.map(() => '?').join(',');
     conditions.push(`kategori_2 IN (${ph})`);
@@ -33,6 +43,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Parameter tidak lengkap.' }, { status: 400 });
     }
 
+    // 1. Ambil Detail Event
     const eventStmt = db.prepare("SELECT * FROM market_sounding_logs WHERE id = ?");
     const eventResult = await eventStmt.bind(eventId).first();
 
@@ -40,52 +51,66 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Event tidak ditemukan.' }, { status: 404 });
     }
 
-    // 1. Parse Data Event
-    let { wilayah: wilayahRaw, tanggal: eventDate, kategori_1: k1_json, kategori_2: k2_json } = eventResult;
+    const { 
+      wilayah: wilayahRaw, 
+      kota: kotaRaw, // Ambil data kota
+      tanggal: eventDate, 
+      kategori_1: k1_json, 
+      kategori_2: k2_json 
+    } = eventResult;
     
-    // 2. Handle Wilayah (bisa JSON array atau string biasa dari data lama)
+    // 2. Parsing Data JSON dari Database
+    
+    // Parsing Wilayah (Provinsi)
     let listProvinsi = [];
     try {
-        // Coba parse sebagai JSON
+        // Cek apakah format JSON array atau string biasa (legacy data)
         const parsed = JSON.parse(wilayahRaw);
-        if (Array.isArray(parsed)) {
-            listProvinsi = parsed;
-        } else {
-            // Jika parse berhasil tapi bukan array (jarang terjadi), jadikan array
-            listProvinsi = [parsed];
-        }
+        listProvinsi = Array.isArray(parsed) ? parsed : [parsed];
     } catch (e) {
-        // Jika gagal parse (berarti data lama format string biasa "ACEH"), masukkan langsung
+        // Jika gagal parse JSON, anggap string biasa
         listProvinsi = [wilayahRaw];
     }
 
+    // Parsing Kota
+    let listKota = [];
+    try {
+        if (kotaRaw) {
+            const parsed = JSON.parse(kotaRaw);
+            listKota = Array.isArray(parsed) ? parsed : [parsed];
+        }
+    } catch (e) { listKota = []; }
+
+    // Parsing Kategori
     const optionalParams = {
+      kota: listKota,
       kategori_1: k1_json ? JSON.parse(k1_json) : [],
       kategori_2: k2_json ? JSON.parse(k2_json) : []
     };
 
-    // 3. Setup Tanggal
+    // 3. Setup Tanggal Perbandingan
     const startDate = new Date(eventDate);
     const endDate = new Date(startDate);
     const daysToAddInt = parseInt(daysToAdd, 10);
     endDate.setDate(startDate.getDate() + daysToAddInt);
+    
     const startDateString = startDate.toISOString().split('T')[0];
     const endDateString = endDate.toISOString().split('T')[0];
     
-    // 4. Bangun Query dengan IN (...) untuk provinsi
+    // 4. Bangun Query SQL
     const selectFields = "SELECT nama_produk, perusahaan, product_link";
     
-    // Buat placeholder (?,?,?) sejumlah provinsi
+    // Buat placeholder untuk provinsi: (?,?,?)
     const provPlaceholders = listProvinsi.map(() => '?').join(',');
     
-    // Kondisi dasar: Provinsi ada di list DAN tanggal sesuai
+    // Kondisi Dasar: Provinsi ada di list DAN Tanggal <= X
     const baseCondition = `provinsi IN (${provPlaceholders}) AND DATE(last_update) <= ?`;
     
-    // Parameter dasar: [...listProvinsi, tanggal]
+    // Parameter Dasar: [...Provinsi, Tanggal]
     const paramsBefore = [...listProvinsi, startDateString];
     const paramsAfter = [...listProvinsi, endDateString];
 
-    // Generate Query Lengkap
+    // Generate Query "Before"
     const { query: beforeQueryStr, params: beforeAllParams } = buildDynamicQuery(
       selectFields, 
       [baseCondition], 
@@ -94,6 +119,7 @@ export async function POST(request) {
     );
     const beforeStmt = db.prepare(beforeQueryStr).bind(...beforeAllParams);
 
+    // Generate Query "After"
     const { query: afterQueryStr, params: afterAllParams } = buildDynamicQuery(
       selectFields,
       [baseCondition],
@@ -102,18 +128,22 @@ export async function POST(request) {
     );
     const afterStmt = db.prepare(afterQueryStr).bind(...afterAllParams);
 
-    // 5. Eksekusi
+    // 5. Eksekusi Batch Query
     const [beforeResult, afterResult] = await db.batch([beforeStmt, afterStmt]);
 
-    // 6. Proses Hasil (Sama seperti sebelumnya)
-    const beforeProducts = beforeResult.results.map(p => `${p.nama_produk}::${p.perusahaan}::${p.product_link || ''}`);
-    const afterProducts = afterResult.results.map(p => `${p.nama_produk}::${p.perusahaan}::${p.product_link || ''}`);
+    // 6. Proses Hasil Analisis
+    // Buat string unik untuk identifikasi produk (Nama + Perusahaan + Link)
+    const createUniqueKey = (p) => `${p.nama_produk}::${p.perusahaan}::${p.product_link || ''}`;
+
+    const beforeProducts = beforeResult.results.map(createUniqueKey);
+    const afterProducts = afterResult.results.map(createUniqueKey);
     
     const beforeCount = beforeProducts.length;
     const afterCount = afterProducts.length;
 
     const beforeProductSet = new Set(beforeProducts);
     
+    // Cari produk baru (yang ada di After tapi tidak ada di Before)
     const newProducts = afterProducts
         .filter(p => !beforeProductSet.has(p))
         .map(p => {
@@ -121,6 +151,7 @@ export async function POST(request) {
             return { nama_produk: nama, perusahaan: perusahaan, product_link: link };
         });
 
+    // 7. Kirim Respons
     return NextResponse.json({
       beforeCount,
       afterCount,
