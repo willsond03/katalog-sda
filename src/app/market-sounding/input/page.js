@@ -1,13 +1,16 @@
 // Lokasi: src/app/market-sounding/input/page.js
 'use client';
 import { useState, useEffect, useMemo } from 'react';
-import SearchableSelect from '../../../components/SearchableSelect';
+// import SearchableSelect dihapus karena digantikan MultiSelectDropdown
 import MultiSelectDropdown from '../../../components/MultiSelectDropdown';
 
 export default function InputMarketSoundingPage() {
   const [allFilterOptions, setAllFilterOptions] = useState({ provinsi: [], kategori_1: [] });
   const [k2Options, setK2Options] = useState([]); 
-  const [selectedProvinsi, setSelectedProvinsi] = useState('');
+  
+  // --- PERUBAHAN 1: State Provinsi diubah menjadi Array [] ---
+  const [selectedProvinsi, setSelectedProvinsi] = useState([]); 
+  
   const [selectedK1, setSelectedK1] = useState([]);
   const [selectedK2, setSelectedK2] = useState([]);
   const [status, setStatus] = useState({ loading: false, message: '', isError: false });
@@ -22,9 +25,7 @@ export default function InputMarketSoundingPage() {
           provinsi: optionsData.provinsi,
           kategori_1: optionsData.kategori_1
         });
-        if (optionsData.provinsi.length > 0) {
-            setSelectedProvinsi(optionsData.provinsi[0]);
-        }
+        // Kita tidak lagi set default value [0], biarkan kosong agar user memilih sendiri
       } catch (error) { console.error("Gagal memuat opsi:", error); }
     };
     fetchOptions();
@@ -54,9 +55,7 @@ export default function InputMarketSoundingPage() {
     updateK2Options();
   }, [selectedK1]); 
 
-  const provinsiOptionsForSelect = useMemo(() => {
-    return allFilterOptions.provinsi.map(opt => ({ id: opt, name: opt }));
-  }, [allFilterOptions.provinsi]);
+  // useMemo provinsiOptionsForSelect dihapus karena MultiSelectDropdown menerima array string langsung
 
   const handleMarketSoundingSubmit = async (event) => {
     event.preventDefault();
@@ -64,7 +63,7 @@ export default function InputMarketSoundingPage() {
     
     const formData = {
       balai: event.target.balai.value,
-      wilayah: selectedProvinsi,
+      wilayah: selectedProvinsi, // Sekarang mengirim Array
       paket_pekerjaan: event.target.paket_pekerjaan.value,
       tanggal: event.target.tanggal.value,
       kategori_1: selectedK1,
@@ -82,7 +81,7 @@ export default function InputMarketSoundingPage() {
       
       setStatus({ loading: false, message: 'Data Market Sounding berhasil disimpan!', isError: false });
       event.target.reset();
-      setSelectedProvinsi(allFilterOptions.provinsi.length > 0 ? allFilterOptions.provinsi[0] : '');
+      setSelectedProvinsi([]); // Reset ke array kosong
       setSelectedK1([]);
       setSelectedK2([]);
     } catch (error) {
@@ -102,21 +101,28 @@ export default function InputMarketSoundingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
             {/* Kolom Kiri: Mandatory */}
-            {/* REVISI 2: Teks "Parameter Mandatory" dihapus dari sini */}
             <div className="space-y-4 p-6 rounded-xl shadow-sm bg-gradient-to-br from-blue-50 to-slate-100">
               <div>
                 <label htmlFor="balai" className="block text-sm font-medium text-gray-700">Balai</label>
                 <input type="text" id="balai" name="balai" required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"/>
               </div>
+              
+              {/* --- PERUBAHAN 2: Menggunakan MultiSelectDropdown --- */}
               <div>
-                <SearchableSelect
+                 {/* Label manual karena MultiSelectDropdown menanganinya sendiri, tapi container perlu margin */}
+                 <MultiSelectDropdown
                     label="Wilayah (Provinsi)"
-                    options={provinsiOptionsForSelect}
-                    selectedValue={selectedProvinsi}
+                    options={allFilterOptions.provinsi}
+                    selectedValues={selectedProvinsi}
                     onChange={setSelectedProvinsi}
-                    placeholder="Cari Wilayah..."
+                    placeholder="Pilih satu atau lebih wilayah..."
                 />
+                {/* Validasi sederhana jika kosong */}
+                {selectedProvinsi.length === 0 && (
+                    <p className="text-xs text-amber-600 mt-1">* Wajib pilih minimal satu wilayah</p>
+                )}
               </div>
+
               <div>
                 <label htmlFor="paket_pekerjaan" className="block text-sm font-medium text-gray-700">Paket Pekerjaan</label>
                 <input type="text" id="paket_pekerjaan" name="paket_pekerjaan" required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"/>
@@ -130,7 +136,7 @@ export default function InputMarketSoundingPage() {
             {/* Kolom Kanan: Opsional */}
             <div className="space-y-4 p-6 rounded-xl shadow-sm bg-gradient-to-br from-red-50 to-orange-100">
               <div className="text-lg font-semibold text-gray-900 mb-2">Parameter Opsional</div>
-              {/* REVISI 3: Label diubah */}
+              
               <MultiSelectDropdown
                 label="Kategori 1"
                 options={allFilterOptions.kategori_1}
@@ -138,14 +144,14 @@ export default function InputMarketSoundingPage() {
                 onChange={setSelectedK1}
                 placeholder="Pilih Kategori 1..."
               />
-              {/* REVISI 3: Label diubah */}
+              
               <MultiSelectDropdown
                 label="Kategori 2"
                 options={k2Options} 
                 selectedValues={selectedK2}
                 onChange={setSelectedK2}
                 placeholder={loadingK2 ? "Memuat..." : (selectedK1.length === 0 ? "Pilih Kategori 1 dahulu" : "Pilih Kategori 2...")}
-                disabled={loadingK2 || selectedK1.length === 0} // Properti ini sekarang akan berfungsi
+                disabled={loadingK2 || selectedK1.length === 0}
               />
             </div>
           </div>
@@ -159,7 +165,8 @@ export default function InputMarketSoundingPage() {
             )}
             <button 
               type="submit" 
-              disabled={status.loading}
+              // Disable tombol jika provinsi belum dipilih
+              disabled={status.loading || selectedProvinsi.length === 0}
               className="py-2 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm disabled:bg-blue-400 disabled:cursor-wait"
             >
               {status.loading ? 'Menyimpan...' : 'Simpan'}
